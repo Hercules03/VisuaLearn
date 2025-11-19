@@ -35,25 +35,43 @@ const diagramPrompt = ai.definePrompt({
   name: 'diagramPrompt',
   input: {schema: GenerateInteractiveDiagramInputSchema},
   output: {schema: GenerateInteractiveDiagramOutputSchema},
-  prompt: `You are an expert at creating interactive SVG diagrams that clearly and concisely explain complex concepts. 
+  prompt: `You are an expert educational technologist and frontend developer. Your mission is to create a self-contained, interactive, and animated educational diagram to explain the following concept: {{{concept}}}.
 
-  The user will provide a concept, and you will respond with:
-  1.  An SVG diagram suitable for rendering directly in a browser.
-  2.  An explanation of the diagram.
-  3.  A step by step tutorial of the concept, with steps described as short and clear bullet points.
+The output must be a single, well-structured SVG file that includes embedded CSS and JavaScript.
 
-  Concept: {{{concept}}}
+**Core Requirements:**
 
-  - The SVG must be interactive.
-  - Tutorial steps must correspond to elements in the SVG. Add an 'id' attribute to the SVG elements that are part of the tutorial, following the pattern "step-0", "step-1", etc., corresponding to each step's index. These elements will be highlighted.
-  - For interactive components that should have a tooltip, wrap the component and its tooltip text in a group with the class "tooltip-group". Inside this group, the main component should be the first element. Then, add a <rect> with the class "tooltip-overlay" that covers the component's area. Finally, add a <text> element with the class "tooltip-text" for the description. The overlay and text will be shown on hover.
-  - The tooltip text should be white and positioned on top of the semi-transparent grey overlay. Explain what the component is and its use.
-  - The explanation should provide a general overview of the concept, while the steps provide detailed guidance.
-  - Ensure that the generated SVG is well-formed and valid.
-  - Make sure that the step by step tutorial is clear, concise and comprehensive and can be used as a guide for the user to understand the concept.
-  - All interactive elements that can be highlighted or have tooltips must have the 'interactive-element' class.
+1.  **Overall Explanation:** Provide a concise, top-level explanation of the concept. This will be displayed alongside the diagram.
+2.  **Numbered Steps:** Break down the process into a series of clear, numbered steps. Each step should have a corresponding explanation.
+3.  **SVG Diagram:** Create a visually appealing and accurate SVG diagram representing the concept.
 
-  Output should conform to this schema: ${JSON.stringify(GenerateInteractiveDiagramOutputSchema.shape, null, 2)}
+**SVG Structure and Interactivity Details:**
+
+1.  **Component Tooltips (The "What"):**
+    *   For key components, create tooltips that explain what each component is and its function.
+    *   To implement this, wrap the component's SVG elements (e.g., \`<path>\`, \`<rect>\`) within a group (\`<g>\`).
+    *   This group **MUST** have two attributes:
+        *   \`class="tooltip-group"\`
+        *   \`data-tooltip-text="[Your concise explanation here]"\`
+    *   **Example:** \`<g class="tooltip-group" data-tooltip-text="This is the CPU. It performs calculations."><rect ... /></g>\`
+    *   The user-agent stylesheet will handle the hover effect (grey overlay and white text) automatically based on these attributes.
+
+2.  **Step-by-Step Highlighting (The "How"):**
+    *   The diagram must visually correspond to the numbered tutorial steps.
+    *   For each step, identify the relevant SVG elements that should be highlighted.
+    *   Wrap these elements in a group (\`<g>\`) with a unique ID that follows the pattern \`step-N\`, where \`N\` is the zero-based step number.
+    *   **Example:** For Step 1 (which is step 0), the group should be: \`<g id="step-0"> ... elements for step 1 ... </g>\`. For Step 2, it will be \`<g id="step-1">\`, and so on.
+    *   The application will automatically apply a "highlighted" class to the correct group based on the user's progress.
+
+**Design and Code Standards:**
+
+*   **Styling:** Use clean, modern aesthetics. Employ a clear color palette to differentiate components. Ensure all styling is embedded within a \`<style>\` tag inside the SVG.
+*   **Animation:** Use CSS animations or simple embedded JavaScript for any dynamic effects in the full simulation mode.
+*   **Responsiveness:** The SVG should be designed to scale gracefully within its container. Use relative units where possible.
+*   **Self-Contained:** All necessary CSS and JavaScript **MUST** be embedded within the final SVG file. Do not use external file references.
+*   **IDs:** Ensure all element IDs within the SVG are unique.
+
+Your final output must be structured according to the specified JSON schema.
   `,
 });
 
