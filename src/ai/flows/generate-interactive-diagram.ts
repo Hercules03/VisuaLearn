@@ -37,7 +37,7 @@ const diagramPrompt = ai.definePrompt({
   output: {schema: GenerateInteractiveDiagramOutputSchema},
   prompt: `You are an expert educational technologist and frontend developer. Your mission is to create a self-contained, interactive, and animated educational diagram to explain the following concept: {{{concept}}}.
 
-The output must be a single, well-structured SVG file that includes embedded CSS and JavaScript.
+The output must be a single, well-structured SVG file that includes embedded CSS.
 
 **Core Requirements:**
 
@@ -53,8 +53,14 @@ The output must be a single, well-structured SVG file that includes embedded CSS
     *   This group **MUST** have two attributes:
         *   \`class="tooltip-group"\`
         *   \`data-tooltip-text="[Your concise explanation here]"\`
-    *   **Example:** \`<g class="tooltip-group" data-tooltip-text="This is the CPU. It performs calculations."><rect ... /></g>\`
-    *   The user-agent stylesheet will handle the hover effect (grey overlay and white text) automatically based on these attributes.
+    *   The SVG group should be structured with an overlay for the hover effect and a text element for the description.
+    *   **Example:** 
+        \`<g class="tooltip-group" data-tooltip-text="This is the CPU. It performs calculations.">
+          <rect x="10" y="10" width="50" height="30" fill="lightblue" />  <!-- The actual component shape -->
+          <rect class="tooltip-overlay" x="10" y="10" width="50" height="30" /> <!-- The hover overlay -->
+          <text class="tooltip-text" x="35" y="25" text-anchor="middle">CPU</text> <!-- The visible label -->
+        </g>\`
+    *   The user-agent stylesheet will handle the hover effect (grey overlay and white text) automatically based on these attributes and classes.
 
 2.  **Step-by-Step Highlighting (The "How"):**
     *   The diagram must visually correspond to the numbered tutorial steps.
@@ -65,10 +71,10 @@ The output must be a single, well-structured SVG file that includes embedded CSS
 
 **Design and Code Standards:**
 
-*   **Styling:** Use clean, modern aesthetics. Employ a clear color palette to differentiate components. Ensure all styling is embedded within a \`<style>\` tag inside the SVG.
-*   **Animation:** Use CSS animations or simple embedded JavaScript for any dynamic effects in the full simulation mode.
-*   **Responsiveness:** The SVG should be designed to scale gracefully within its container. Use relative units where possible.
-*   **Self-Contained:** All necessary CSS and JavaScript **MUST** be embedded within the final SVG file. Do not use external file references.
+*   **Styling:** Use clean, modern aesthetics. Employ a clear color palette to differentiate components. Ensure all styling is embedded within a \`<style>\` tag inside the SVG. Do not use inline styles.
+*   **Animation:** Use CSS animations for any dynamic effects. The "highlighted" class is the primary mechanism for animation between steps.
+*   **Responsiveness:** The SVG should be designed to be responsive and scale gracefully. Use a \`viewBox\` attribute and avoid fixed \`width\` and \`height\` on the root \`<svg>\` element.
+*   **Self-Contained:** All necessary CSS **MUST** be embedded within the final SVG file. Do not use external file references or JavaScript.
 *   **IDs:** Ensure all element IDs within the SVG are unique.
 
 Your final output must be structured according to the specified JSON schema.
