@@ -92,7 +92,6 @@
   }
   /* Tooltip styles */
   .tooltip-group {
-    position: relative;
     cursor: pointer;
   }
   .tooltip-overlay, .tooltip-text {

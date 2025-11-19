@@ -25,7 +25,6 @@ export function DiagramDisplay({
     const container = svgContainerRef.current;
     if (!container) return;
 
-    // Set SVG content if it's new
     if (svgContent && container.innerHTML !== svgContent) {
       container.innerHTML = svgContent;
       const svg = container.querySelector('svg');
@@ -35,15 +34,14 @@ export function DiagramDisplay({
         svg.style.maxWidth = '100%';
         svg.style.height = 'auto';
       }
-    } else if (!svgContent) {
+    } else if (!svgContent && !isLoading) {
       container.innerHTML = '';
     }
 
-    // Highlighting logic
     if (svgContent) {
-      container
-        .querySelectorAll('.highlighted')
-        .forEach((el) => el.classList.remove('highlighted'));
+      container.querySelectorAll('.highlighted').forEach((el) => {
+        el.classList.remove('highlighted');
+      });
 
       if (currentStep >= 0) {
         const elementToHighlight = container.querySelector(
@@ -51,14 +49,10 @@ export function DiagramDisplay({
         );
         if (elementToHighlight) {
           elementToHighlight.classList.add('highlighted');
-          // All interactive elements should have this class from the SVG generator
-          if (!elementToHighlight.classList.contains('interactive-element')) {
-            elementToHighlight.classList.add('interactive-element');
-          }
         }
       }
     }
-  }, [svgContent, currentStep]);
+  }, [svgContent, currentStep, isLoading]);
 
   return (
     <Card className="flex-1 w-full h-full flex items-center justify-center overflow-hidden min-h-[400px] md:min-h-[600px] lg:min-h-0">

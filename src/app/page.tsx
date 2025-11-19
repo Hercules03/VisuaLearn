@@ -23,14 +23,19 @@ export default function Home() {
   const { toast } = useToast();
 
   useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
     if (isSimulating && generationResult?.diagramData.steps.length) {
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         setCurrentStep(
           (prev) => (prev + 1) % generationResult.diagramData.steps.length
         );
       }, 2000);
-      return () => clearInterval(interval);
     }
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
   }, [isSimulating, generationResult]);
 
   const onFormSubmit = async (values: { concept: string }) => {

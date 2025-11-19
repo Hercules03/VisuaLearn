@@ -51,6 +51,7 @@ const diagramPrompt = ai.definePrompt({
   - The explanation should provide a general overview of the concept, while the steps provide detailed guidance.
   - Ensure that the generated SVG is well-formed and valid.
   - Make sure that the step by step tutorial is clear, concise and comprehensive and can be used as a guide for the user to understand the concept.
+  - All interactive elements that can be highlighted or have tooltips must have the 'interactive-element' class.
 
   Output should conform to this schema: ${JSON.stringify(GenerateInteractiveDiagramOutputSchema.shape, null, 2)}
   `,
