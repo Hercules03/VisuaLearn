@@ -3,7 +3,6 @@
 import React, { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 interface DiagramDisplayProps {
@@ -26,30 +25,37 @@ export function DiagramDisplay({
     const container = svgContainerRef.current;
     if (!container) return;
 
-    if (svgContent) {
-      if (container.innerHTML !== svgContent) {
-        container.innerHTML = svgContent;
-        const svg = container.querySelector('svg');
-        if (svg) {
-          svg.setAttribute('width', '100%');
-          svg.setAttribute('height', '100%');
-          svg.style.maxWidth = '100%';
-          svg.style.height = 'auto';
-        }
+    // Set SVG content if it's new
+    if (svgContent && container.innerHTML !== svgContent) {
+      container.innerHTML = svgContent;
+      const svg = container.querySelector('svg');
+      if (svg) {
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', '100%');
+        svg.style.maxWidth = '100%';
+        svg.style.height = 'auto';
       }
-    } else {
+    } else if (!svgContent) {
       container.innerHTML = '';
     }
 
-    container
-      .querySelectorAll('.highlighted')
-      .forEach((el) => el.classList.remove('highlighted'));
+    // Highlighting logic
+    if (svgContent) {
+      container
+        .querySelectorAll('.highlighted')
+        .forEach((el) => el.classList.remove('highlighted'));
 
-    if (currentStep >= 0) {
-      const elementToHighlight = container.querySelector(`#step-${currentStep}`);
-      if (elementToHighlight) {
-        elementToHighlight.classList.add('highlighted');
-        elementToHighlight.classList.add('interactive-element');
+      if (currentStep >= 0) {
+        const elementToHighlight = container.querySelector(
+          `#step-${currentStep}`
+        );
+        if (elementToHighlight) {
+          elementToHighlight.classList.add('highlighted');
+          // All interactive elements should have this class from the SVG generator
+          if (!elementToHighlight.classList.contains('interactive-element')) {
+            elementToHighlight.classList.add('interactive-element');
+          }
+        }
       }
     }
   }, [svgContent, currentStep]);

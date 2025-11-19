@@ -101,7 +101,7 @@ export function ControlPanel({
           </form>
         </Form>
 
-        {diagramData && (
+        {diagramData && diagramData.steps.length > 0 && (
           <div className="space-y-6 animate-in fade-in">
             <div className="space-y-4">
               <h3 className="font-semibold font-headline text-lg">Tutorial</h3>

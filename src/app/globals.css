@@ -90,4 +90,26 @@
     stroke: hsl(var(--primary)) !important;
     stroke-width: 2px !important;
   }
+  /* Tooltip styles */
+  .tooltip-group {
+    position: relative;
+    cursor: pointer;
+  }
+  .tooltip-overlay, .tooltip-text {
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    pointer-events: none;
+  }
+  .tooltip-group:hover .tooltip-overlay,
+  .tooltip-group:hover .tooltip-text {
+    opacity: 1;
+  }
+  .tooltip-overlay {
+    fill: rgba(75, 85, 99, 0.7); /* gray-600 with 70% opacity */
+  }
+  .tooltip-text {
+    fill: white;
+    font-size: 10px;
+    font-family: sans-serif;
+  }
 }

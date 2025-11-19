@@ -4,7 +4,7 @@
  * @fileOverview A flow for generating interactive diagrams from a given concept.
  *
  * - generateInteractiveDiagram - A function that generates an interactive diagram explaining a concept.
- * - GenerateInteractiveDiagramInput - The input type for the generateInteractiveDiagram function.
+ * - GenerateInteractiveDiagramInput - The input type for the generateInteractivediagram function.
  * - GenerateInteractiveDiagramOutput - The return type for the generateInteractiveDiagram function.
  */
 
@@ -44,11 +44,13 @@ const diagramPrompt = ai.definePrompt({
 
   Concept: {{{concept}}}
 
-  Ensure that the SVG diagram is interactive, with components that can be highlighted and animated to demonstrate the concept in real-time. The SVG should have tooltips which explain parts of the diagram. The explanation should provide a general overview of the concept, while the steps provide detailed guidance.
-
-  Ensure that the generated SVG is well-formed and valid.
-
-  Make sure that the step by step tutorial is clear, concise and comprehensive and can be used as a guide for the user to understand the concept.
+  - The SVG must be interactive.
+  - Tutorial steps must correspond to elements in the SVG. Add an 'id' attribute to the SVG elements that are part of the tutorial, following the pattern "step-0", "step-1", etc., corresponding to each step's index. These elements will be highlighted.
+  - For interactive components that should have a tooltip, wrap the component and its tooltip text in a group with the class "tooltip-group". Inside this group, the main component should be the first element. Then, add a <rect> with the class "tooltip-overlay" that covers the component's area. Finally, add a <text> element with the class "tooltip-text" for the description. The overlay and text will be shown on hover.
+  - The tooltip text should be white and positioned on top of the semi-transparent grey overlay. Explain what the component is and its use.
+  - The explanation should provide a general overview of the concept, while the steps provide detailed guidance.
+  - Ensure that the generated SVG is well-formed and valid.
+  - Make sure that the step by step tutorial is clear, concise and comprehensive and can be used as a guide for the user to understand the concept.
 
   Output should conform to this schema: ${JSON.stringify(GenerateInteractiveDiagramOutputSchema.shape, null, 2)}
   `,
