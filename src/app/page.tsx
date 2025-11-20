@@ -89,8 +89,10 @@ export default function Home() {
           </div>
           <DiagramDisplay
             svgContent={generationResult?.diagramData.svgContent ?? null}
+            diagramData={generationResult?.diagramData ?? null}
             isLoading={isLoading}
             currentStep={currentStep}
+            isSimulating={isSimulating}
           />
         </div>
       </main>

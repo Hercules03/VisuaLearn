@@ -23,7 +23,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
-import type { GenerateInteractiveDiagramOutput } from '@/ai/flows/generate-interactive-diagram';
+import type { DiagramContent } from '@/ai/flows/generate-interactive-diagram';
 
 const formSchema = z.object({
   concept: z
@@ -34,7 +34,7 @@ const formSchema = z.object({
 type ControlPanelProps = {
   onSubmit: (values: z.infer<typeof formSchema>) => void;
   isLoading: boolean;
-  diagramData: GenerateInteractiveDiagramOutput['diagramData'] | null;
+  diagramData: DiagramContent | null;
   currentStep: number;
   setCurrentStep: React.Dispatch<React.SetStateAction<number>>;
   isSimulating: boolean;
@@ -101,24 +101,31 @@ export function ControlPanel({
           </form>
         </Form>
 
-        {diagramData && diagramData.steps.length > 0 && (
+        {diagramData && diagramData.steps && diagramData.steps.length > 0 && (
           <div className="space-y-6 animate-in fade-in">
+            {/* Overview Section */}
+            <div className="space-y-3">
+              <h3 className="font-semibold font-headline text-lg">Overview</h3>
+              <div className="p-4 bg-muted/50 rounded-lg text-sm">
+                <p className="text-muted-foreground">{diagramData.explanation}</p>
+              </div>
+            </div>
+
+            {/* Tutorial Navigation Section */}
             <div className="space-y-4">
               <h3 className="font-semibold font-headline text-lg">Tutorial</h3>
-              <div className="p-4 bg-muted/50 rounded-lg space-y-4 text-sm min-h-[120px]">
-                <div>
-                  <h4 className="font-semibold mb-1">Explanation</h4>
-                  <p className="text-muted-foreground">
-                    {diagramData.explanation}
-                  </p>
-                </div>
+              <div className="p-4 bg-muted/50 rounded-lg space-y-3 text-sm min-h-[120px]">
                 {diagramData.steps[currentStep] && (
-                  <div>
-                    <h4 className="font-semibold mb-1">Step {currentStep + 1}</h4>
-                    <p className="text-muted-foreground">
-                      {diagramData.steps[currentStep]}
-                    </p>
-                  </div>
+                  <>
+                    <div>
+                      <h4 className="font-semibold mb-1">
+                        {diagramData.steps[currentStep].title}
+                      </h4>
+                      <p className="text-muted-foreground">
+                        {diagramData.steps[currentStep].description}
+                      </p>
+                    </div>
+                  </>
                 )}
               </div>
               <div className="flex items-center justify-between">
@@ -127,6 +134,7 @@ export function ControlPanel({
                   size="icon"
                   onClick={handlePrev}
                   disabled={currentStep <= 0 || isSimulating}
+                  title="Previous Step"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span className="sr-only">Previous Step</span>
@@ -141,6 +149,7 @@ export function ControlPanel({
                   disabled={
                     currentStep >= diagramData.steps.length - 1 || isSimulating
                   }
+                  title="Next Step"
                 >
                   <ArrowRight className="h-4 w-4" />
                   <span className="sr-only">Next Step</span>
@@ -148,9 +157,10 @@ export function ControlPanel({
               </div>
             </div>
 
+            {/* Simulation Mode Section */}
             <div className="space-y-4">
               <h3 className="font-semibold font-headline text-lg">
-                Simulation
+                Simulation Mode
               </h3>
               <div className="flex items-center space-x-2">
                 <Switch
@@ -158,10 +168,12 @@ export function ControlPanel({
                   checked={isSimulating}
                   onCheckedChange={setIsSimulating}
                 />
-                <Label htmlFor="simulation-mode">Start/Stop Simulation</Label>
+                <Label htmlFor="simulation-mode">
+                  {isSimulating ? 'Pause' : 'Start'} Simulation
+                </Label>
               </div>
               <p className="text-xs text-muted-foreground">
-                Toggle to loop through all the steps automatically.
+                Watch the diagram animate through all steps automatically.
               </p>
             </div>
           </div>
