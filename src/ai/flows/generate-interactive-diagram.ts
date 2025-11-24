@@ -180,471 +180,116 @@ const diagramPrompt = ai.definePrompt({
   name: 'diagramPrompt',
   input: {schema: GenerateInteractiveDiagramInputSchema},
   output: {schema: GenerateInteractiveDiagramOutputSchema},
-  prompt: `You are an expert educational technologist and SVG/CSS animation specialist. Your mission is to create a self-contained, interactive, and animated educational diagram to explain the following concept: {{{concept}}}.
-
-**CRITICAL: This diagram must have REAL ANIMATIONS with VISUAL MOVEMENT and FLOW, similar to this reference:**
-\`\`\`
-- Components actually MOVE between zones/positions during steps (using CSS transforms)
-- Messages or data FLOW from one component to another (animated paths, arrows)
-- Elements APPEAR and DISAPPEAR with smooth transitions
-- Multiple animations happen in sequence (e.g., key moves, then message transforms)
-- Hover effects show what each component does
-- Step transitions are visually distinct with clear animations
-\`\`\`
-
-The output must be a comprehensive interactive diagram with THREE DISTINCT INTERACTION LAYERS:
-1. **Component Exploration (The "What"):** Hover over components to see tooltips
-2. **Step-by-Step Tutorial (The "How"):** Navigate through sequential steps with animations
-3. **Full Simulation Mode (The "Review"):** Auto-play that loops through all steps
-
-**CRITICAL: Component Metadata Structure**
-
-You MUST provide a structured list of all interactive components in the diagram. For EACH component, generate:
-- \`id\`: Unique identifier (kebab-case, e.g., "main-valve", "pump-1", "cpu-core")
-- \`label\`: Display name (e.g., "Main Valve", "Circulation Pump")
-- \`description\`: 1-2 sentence explanation of function
-- \`svgSelector\`: CSS selector targeting the element (e.g., "#main-valve", ".pump-group", "[data-component='valve-a']")
-- \`category\`: One of: "control", "input", "output", "process", "sensor"
-
-**EXAMPLE Component Structure:**
-\`\`\`json
-"components": [
-  {
-    "id": "main-valve",
-    "label": "Main Valve",
-    "description": "Controls the flow of pressurized fluid through the system.",
-    "svgSelector": "#main-valve-group",
-    "category": "control"
-  },
-  {
-    "id": "pump",
-    "label": "Circulation Pump",
-    "description": "Pumps fluid through the circuit under pressure.",
-    "svgSelector": "#pump-rect",
-    "category": "process"
-  }
-]
-\`\`\`
-
-**CRITICAL: Step Structure**
-
-Break down the process into logical, sequential steps. For EACH step, generate:
-- \`id\`: Unique step identifier (e.g., "step-1", "phase-initial")
-- \`title\`: Step title (e.g., "Initial State", "Valve Opens")
-- \`description\`: Detailed explanation of what happens in this step
-- \`activeComponentIds\`: Array of component IDs that are ACTIVE/HIGHLIGHTED in this step (e.g., ["main-valve", "pump"])
-  - **CRITICAL CONSTRAINT**: Every ID in \`activeComponentIds\` MUST exist in the \`components\` array
-  - **NEVER reference a component ID that you haven't already defined above**
-  - If a component isn't in the components array, ADD IT before referencing it in steps
-  - Leave empty array [] if no components are active in that step
-- \`animationTiming\`: Optional duration (100-5000ms) for the transition
-
-**EXAMPLE Step Structure:**
-\`\`\`json
-"steps": [
-  {
-    "id": "step-1",
-    "title": "Initial State",
-    "description": "The system is at rest. No fluid is flowing. The main valve is closed.",
-    "activeComponentIds": [],
-    "animationTiming": { "duration": 300 }
-  },
-  {
-    "id": "step-2",
-    "title": "Pump Activation",
-    "description": "The pump begins operation, building pressure in the system.",
-    "activeComponentIds": ["pump"],
-    "animationTiming": { "duration": 400 }
-  },
-  {
-    "id": "step-3",
-    "title": "Valve Opens",
-    "description": "Pressure reaches threshold and opens the main valve, allowing flow.",
-    "activeComponentIds": ["pump", "main-valve"],
-    "animationTiming": { "duration": 500 }
-  }
-]
-\`\`\`
-
-**EXAMPLE ANIMATION STRUCTURE (MUST FOLLOW THIS PATTERN):**
-
-Your SVG must create the visual effect of components MOVING, FLOWING, and TRANSFORMING across the canvas. Here's the required CSS animation pattern:
-
-\`\`\`css
-<style>
-  :root {
-    --transition-speed: 1.2s;
-    --highlight: #FFD700;
-    --accent: #FF6B6B;
-    --active-opacity: 1;
-    --inactive-opacity: 0.3;
-  }
-
-  /* ===== POSITION-BASED ANIMATIONS (Components move between zones) ===== */
-  @keyframes moveLeft { from { transform: translateX(0); } to { transform: translateX(-200px); } }
-  @keyframes moveRight { from { transform: translateX(0); } to { transform: translateX(200px); } }
-  @keyframes moveUp { from { transform: translateY(0); } to { transform: translateY(-100px); } }
-  @keyframes moveDown { from { transform: translateY(0); } to { transform: translateY(100px); } }
-
-  /* ===== FLOW ANIMATIONS (Data/messages flowing between components) ===== */
-  @keyframes flowRight {
-    0% { stroke-dashoffset: 20; }
-    100% { stroke-dashoffset: 0; }
-  }
-  @keyframes flowLeft {
-    0% { stroke-dashoffset: 20; }
-    100% { stroke-dashoffset: 0; }
-  }
-
-  /* ===== STATE CHANGE ANIMATIONS ===== */
-  @keyframes transformState {
-    0% { opacity: 0.5; filter: brightness(0.8); }
-    50% { opacity: 0.8; }
-    100% { opacity: 1; filter: brightness(1.2); }
-  }
-
-  @keyframes slideInFromLeft {
-    from { opacity: 0; transform: translateX(-50px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-
-  @keyframes slideInFromRight {
-    from { opacity: 0; transform: translateX(50px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; filter: brightness(1); }
-    50% { opacity: 0.7; filter: brightness(1.3); }
-  }
-
-  /* ===== BASE TRANSITIONS ===== */
-  [data-step-active] {
-    transition: opacity 0.4s ease, fill 0.4s ease, stroke 0.4s ease, filter 0.4s ease;
-  }
-
-  /* Group containers that can animate */
-  [data-animated-group] {
-    transform-origin: center;
-  }
-
-  /* ===== STEP-BASED STATE ===== */
-  /* When component is ACTIVE in current step */
-  [data-step-active="true"] {
-    opacity: var(--active-opacity);
-    fill: var(--highlight);
-    stroke: var(--accent);
-    filter: brightness(1.3) drop-shadow(0 0 8px var(--highlight));
-  }
-
-  /* When component is INACTIVE */
-  [data-step-active="false"] {
-    opacity: var(--inactive-opacity);
-    fill: #E0E0E0;
-    stroke: #AAAAAA;
-    filter: brightness(1);
-  }
-
-  /* ===== MOVEMENT STATES (Use these to move components between positions) ===== */
-  [data-position="start"] {
-    transform: translateX(0) translateY(0);
-  }
-
-  [data-position="moving"] {
-    animation: moveRight var(--transition-speed) ease-in-out forwards;
-  }
-
-  [data-position="end"] {
-    transform: translateX(200px) translateY(0);
-  }
-
-  /* ===== FLOW INDICATORS (Animated paths/arrows showing data flow) ===== */
-  [data-flow="true"] {
-    stroke-dasharray: 10, 5;
-    animation: flowRight 2s linear infinite;
-  }
-
-  [data-flow="reverse"] {
-    stroke-dasharray: 10, 5;
-    animation: flowLeft 2s linear infinite;
-  }
-
-  /* ===== TRANSFORMATION INDICATORS (Component changing state) ===== */
-  [data-transforming="true"] {
-    animation: transformState 0.8s ease-in-out forwards;
-  }
-
-  /* ===== HOVER EFFECTS ===== */
-  [data-component-hover="true"] {
-    opacity: 1 !important;
-    fill: var(--highlight) !important;
-    filter: brightness(1.5) drop-shadow(0 0 15px var(--highlight)) !important;
-    animation: pulse 1.5s ease-in-out infinite;
-  }
-</style>
-\`\`\`
-
-**KEY ANIMATION CONCEPTS TO IMPLEMENT:**
-1. **Position-Based Animation**: Components in zones that shift position use \`data-position\` attribute with translate transforms
-2. **Flow Animation**: Connections/arrows use \`data-flow="true"\` with stroke-dasharray for moving pattern effect
-3. **State Transformation**: When component changes state (e.g., plaintext→ciphertext), use \`data-transforming="true"\`
-4. **Sequential Effects**: Each step should trigger animations that give sense of progression and causality
-
-**SVG Structure Requirements (CRITICAL for animations to work):**
-
-1. **Component Organization with Zones:**
-   - Organize your SVG into logical "zones" or "areas" using \`<g>\` groups
-   - Example: Left zone for "sender", middle zone for "channel", right zone for "receiver"
-   - Use visual boundaries (dashed rectangles) to show these zones
-   - Components should be positioned within these zones for clarity
-
-2. **Component IDs and Attributes:**
-   - Every interactive component MUST have:
-     - An ID or matching selector (e.g., \`id="message-component"\`)
-     - \`data-step-active="true"|"false"\` attribute for highlighting
-     - \`data-component-hover="true"|"false"\` attribute for hover effects
-   - Example: \`<g id="grp-message" data-step-active="false" data-component-hover="false">\`
-
-3. **Animation Data Attributes:**
-   - Add \`data-position="start"|"moving"|"end"\` to components that move between zones
-   - Add \`data-flow="true"|"reverse"\` to arrows/connections showing data flow
-   - Add \`data-transforming="true"\` to components that change state (e.g., plaintext→encrypted)
-   - Add \`data-animated-group\` to groups containing multiple elements that animate together
-
-4. **Connection/Flow Elements:**
-   - Create \`<line>\` or \`<path>\` elements for connections between components
-   - Use \`stroke-dasharray\` for dashed appearance
-   - Apply \`data-flow="true"\` to animate the dash pattern (creates flowing effect)
-   - Position arrows in the middle of the canvas to show communication flow
-
-5. **Structural Example:**
-   \`\`\`xml
-   <svg viewBox="0 0 800 450">
-     <!-- Left Zone: Sender -->
-     <g id="zone-sender">
-       <g id="grp-plaintext" data-step-active="false" data-animated-group>
-         <rect.../>
-         <text>PLAINTEXT</text>
-       </g>
-     </g>
-
-     <!-- Center: Communication Channel -->
-     <line x1="200" y1="225" x2="600" y2="225" stroke="#334155"/>
-     <path id="flow-arrow" d="M 200 225 L 600 225" data-flow="true"/>
-
-     <!-- Right Zone: Receiver -->
-     <g id="zone-receiver">
-       <g id="grp-keys" data-step-active="false" data-animated-group>
-         <rect.../><text>KEY</text>
-       </g>
-     </g>
-   </svg>
-   \`\`\`
-
-6. **Step-Based Structure:**
-   - Create logical step groups (not necessarily DOM groups, but conceptually)
-   - Each step should have distinct visual changes:
-     - Step 1: Initialize, show all components faded
-     - Step 2: Highlight first component with animation
-     - Step 3: Move component or show flow animation
-     - Step 4: Transform component (state change)
-     - Step 5: Move to next location
-   - Each step's active components are set via \`data-step-active="true"\`
-
-7. **Embedded Styling (REQUIRED):**
-   - Include \`<style>\` tag with all CSS (see EXAMPLE ANIMATION STRUCTURE above)
-   - Define all @keyframes animations
-   - Ensure transitions work smoothly with 0.4s timing
-
-8. **Responsiveness:**
-   - Use \`viewBox="0 0 800 450"\` for consistent aspect ratio
-   - Use relative sizing in SVG (no fixed pixel dimensions)
-   - All text should scale with viewBox
-
-9. **Self-Contained:**
-   - All CSS and animations embedded in SVG
-   - No external dependencies or HTTP requests
-   - Should work as a standalone file
-
-**Metadata Requirements:**
-
-Generate metadata with:
-- \`conceptName\`: The concept being explained (same as input)
-- \`totalDuration\`: Total milliseconds for full simulation (sum of all step durations)
-- \`fps\`: Target 30 FPS (optional)
+  prompt: `You are the Interactive Diagram Engine. Generate a single, strictly valid JSON object explaining: {{{concept}}}
 
 **Output Structure:**
-
-Your JSON response MUST include:
-- \`diagramData.svgContent\`: Complete SVG with embedded styles
-- \`diagramData.explanation\`: Top-level concept explanation
-- \`diagramData.components\`: Array of component metadata (required)
-- \`diagramData.steps\`: Array of step definitions with component references (required)
-- \`diagramData.metadata\`: Diagram metadata
-
-**Data Consistency Requirements (CRITICAL):**
-
-Before returning your final JSON, verify:
-1. Every component ID in \`steps[].activeComponentIds\` exists in \`components[]\` array
-2. Every component ID in \`components[]\` has a matching SVG element in the diagram
-3. No duplicate component IDs or step IDs
-4. All required fields are populated (no null/empty values except optional fields)
-5. Animation timing is always between 100-5000ms
-
-If you find any inconsistencies, FIX THEM before returning the JSON.
-
-**QUALITY STANDARDS (Non-negotiable):**
-
-🔴 **CRITICAL - ANIMATIONS MUST CREATE VISUAL MOVEMENT:**
-- Components MUST MOVE between positions (using CSS transform animations)
-- Data/messages MUST FLOW between components (using animated stroke-dasharray)
-- State transformations MUST be visually distinct (opacity, filter, and animation changes)
-- **STATIC DIAGRAMS ARE NOT ACCEPTABLE** - if clicking "Start Simulation" doesn't show movement, it's wrong
-- Every step should have at least one visual change or animation
-
-- **Animation Quality:**
-  - Use \`@keyframes\` for movement animations (moveLeft, moveRight, moveUp, moveDown)
-  - Use \`stroke-dasharray\` animations for flowing arrows/connections
-  - Use \`transform: translate()\` for smooth position changes
-  - Use \`filter: brightness()\` and \`opacity\` for state changes
-  - Timing: 1.2s total transition speed, 0.4s for attribute changes, 2s for continuous animations
-
-- **Color Palette:** Use distinct, accessible colors (high contrast for readability)
-- **Component Labels:** Keep labels short and clear
-- **Step Descriptions:** Explain what happens and why at each step (these descriptions should match the visual animations)
-- **Accuracy:** Ensure the diagram correctly represents how the system actually works
-- **Data Integrity:** Ensure all referenced component IDs exist (no orphaned references)
-- **Visual Hierarchy:** Components in focus should be bright/highlighted, inactive components faded
-
-**CRITICAL ENHANCEMENT: Data Flow Visualization**
-
-For each step, explicitly model data flows:
-1. What data flows? (e.g., "HTTP request with headers and body")
-2. From which component to which?
-3. What transformation happens? (e.g., "Request is parsed")
-
-Generate dataFlows array:
-\`\`\`json
-"dataFlows": [
-  {
-    "fromComponent": "client",
-    "toComponent": "load-balancer",
-    "dataType": "HTTP Request",
-    "transformation": "Parsed and routed",
-    "isRequired": true
+{
+  "diagramData": {
+    "svgContent": "Self-contained <svg> with CSS animations. Use <g id='comp_id'> for all actors. Modern, clean, flat style.",
+    "explanation": "2-3 paragraph overview of the concept.",
+    "components": [
+      {
+        "id": "Must match SVG id",
+        "label": "Display name",
+        "description": "2-3 sentences technical summary",
+        "detailedExplanation": "How this component works (2-3 sentences)",
+        "realWorldExamples": [{"technology": "AWS", "name": "ALB", "link": "..."}],
+        "failureMode": "What breaks",
+        "failureRecovery": "How it recovers",
+        "inputs": ["Input type 1", "Input type 2"],
+        "outputs": ["Output type 1"],
+        "layer": "core|advanced",
+        "category": "control|input|output|process|sensor",
+        "svgSelector": "CSS selector to SVG element"
+      }
+    ],
+    "steps": [
+      {
+        "id": "step-1",
+        "title": "Step name",
+        "description": "Narrative of what happens",
+        "activeComponentIds": ["comp1", "comp2"],
+        "animationTiming": {"duration": 1000, "easing": "ease-in-out"},
+        "stateSnapshot": [{"componentId": "comp1", "state": "idle|processing|complete|error", "dataIn": "...", "dataOut": "..."}],
+        "dataFlows": [{"fromComponent": "comp1", "toComponent": "comp2", "dataType": "HTTP request", "transformation": "..."}]
+      }
+    ],
+    "scenarios": [
+      {
+        "scenarioName": "What if X fails?",
+        "description": "User action or condition",
+        "impactedComponents": ["comp2", "comp3"],
+        "visualization": {"highlightComponents": [...], "dimComponents": [...], "animationType": "overload|failure|slow|bottleneck"},
+        "lessonLearned": "Key insight from this scenario"
+      }
+    ],
+    "conceptDifficulty": 5,
+    "prerequisites": ["Knowledge area 1", "Knowledge area 2"],
+    "keyInsights": ["Key insight 1", "Key insight 2"],
+    "timeEstimates": {"quickView": 5, "deepUnderstanding": 15, "masteryChallenges": 20},
+    "qualityScore": 85,
+    "generationNotes": ["Confidence notes"]
   }
-]
-\`\`\`
+}
 
-**CRITICAL ENHANCEMENT: Debugging Metadata**
-
-For EACH component, generate:
-1. detailedExplanation: 2-3 sentences explaining HOW it works
-2. inputs: List of inputs and meanings
-3. outputs: List of outputs
-4. failureMode: What happens if this component fails
-5. failureRecovery: How the system recovers
-
-Example:
-\`\`\`json
-"components": [
-  {
-    ...existing fields...,
-    "detailedExplanation": "The load balancer uses Round-Robin algorithm to distribute requests across servers. It maintains a queue and assigns each to the next available server in rotation.",
-    "inputs": ["HTTP request from client", "Server health status updates"],
-    "outputs": ["Routed HTTP request to selected server"],
-    "failureMode": "If load balancer fails, all client requests are dropped.",
-    "failureRecovery": "Health check detects failure within 3 seconds. DNS switches traffic to backup load balancer."
-  }
-]
-\`\`\`
-
-**CRITICAL ENHANCEMENT: Real-World Domain Examples**
-
-For EACH component, provide 2-5 real-world implementations:
-\`\`\`json
-"realWorldExamples": [
-  {
-    "technology": "AWS",
-    "name": "Elastic Load Balancer (ELB)",
-    "link": "https://docs.aws.amazon.com/elasticloadbalancing/"
-  },
-  {
-    "technology": "Kubernetes",
-    "name": "Ingress Controller (Nginx)",
-    "link": "https://kubernetes.io/docs/concepts/services-networking/ingress/"
-  }
-]
-\`\`\`
-
-Also assign each component a layer: "core" (essential) or "advanced" (optional details).
-
-**CRITICAL ENHANCEMENT: Scenarios**
-
-Generate 3-5 "what if?" scenarios that test understanding:
-\`\`\`json
-"scenarios": [
-  {
-    "scenarioName": "High Traffic Load",
-    "description": "Traffic suddenly increases 10x normal volume",
-    "impactedComponents": ["load-balancer", "server-pool"],
-    "visualization": {
-      "highlightComponents": ["load-balancer"],
-      "dimComponents": [],
-      "animationType": "overload"
-    },
-    "lessonLearned": "Load balancer has limits; you need auto-scaling when traffic exceeds capacity."
-  }
-]
-\`\`\`
-
-Animation types: "overload", "failure", "slow", "bottleneck"
-
-**CRITICAL ENHANCEMENT: Time Estimates & Prerequisites**
-
-Estimate realistic learning time:
-\`\`\`json
-"timeEstimates": {
-  "quickView": 3,
-  "deepUnderstanding": 12,
-  "masteryChallenges": 25
-},
-"conceptDifficulty": 6,
-"prerequisites": ["Basic networking", "Understanding of HTTP"],
-"keyInsights": [
-  "Load balancing distributes traffic across multiple servers",
-  "Health checks ensure traffic only goes to healthy servers",
-  "Bottlenecks shift as you scale"
-]
-\`\`\`
-
-**QUALITY ASSURANCE**
-
-Before returning, verify:
-1. Every component ID in steps exists in components array ✓
-2. Every data flow references existing components ✓
-3. Failure modes are realistic and non-contradictory ✓
-4. Real-world examples are accurate (no hallucinated products) ✓
-5. Scenarios are coherent with diagram structure ✓
-6. Time estimates are reasonable (min 2 min, max 60 min) ✓
-
-Self-score quality 0-100:
-- 90-100: High confidence, accurate, well-structured
-- 70-89: Good quality, minor issues
-- Below 70: Concerns about accuracy or completeness
-
-Return qualityScore and generationNotes in metadata.
-
-**ANIMATION CHECKLIST (Must verify before returning):**
-✓ Components move to different zones/positions in steps (using data-position or direct transforms)
-✓ Arrows/connections have flowing animations (stroke-dasharray pattern)
-✓ State transformations are animated (plaintext→encrypted, etc.)
-✓ Hover effects show pulsing and highlighting
-✓ Each step has distinct visual feedback
-✓ Animations are smooth (use ease-in-out timing)
-✓ Animations have purpose (not gratuitous, aligned with concept explanation)
-`,
+**Strict Requirements:**
+1. JSON ONLY. No markdown, no preamble, no explanation.
+2. ALL component IDs in steps/scenarios MUST exist in components array. NO orphaned references.
+3. SVG must use CSS @keyframes for movement (moveLeft, moveRight, moveUp, moveDown, pulse, flowRight, flowLeft).
+4. Technical depth for software engineers: include protocols, state management, error handling.
+5. 5-8 sequential steps showing progression from start to completion.
+6. 3-4 "what-if" scenarios testing knowledge and failure modes.
+7. Real-world implementations with specific technologies (AWS, Kubernetes, Nginx, etc.).
+8. Every step has visible animation or visual change - NO static diagrams.
+9. Validate all references before returning.`,
 });
+
+/**
+ * Retry logic for handling transient network failures
+ * Implements exponential backoff with jitter
+ */
+async function callDiagramPromptWithRetry(
+  input: GenerateInteractiveDiagramInput,
+  maxRetries: number = 3
+): Promise<GenerateInteractiveDiagramOutput> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const { output } = await diagramPrompt(input);
+      return output!;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      // Check if error is retryable (network-related)
+      const isNetworkError =
+        lastError.message.includes('fetch failed') ||
+        lastError.message.includes('socket') ||
+        lastError.message.includes('ECONNRESET') ||
+        lastError.message.includes('UND_ERR_SOCKET');
+
+      if (!isNetworkError || attempt === maxRetries) {
+        // Non-retryable error or max retries reached
+        throw lastError;
+      }
+
+      // Calculate exponential backoff with jitter
+      const baseDelay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+      const jitter = Math.random() * 1000;
+      const delayMs = baseDelay + jitter;
+
+      console.warn(
+        `Network error on attempt ${attempt + 1}/${maxRetries + 1}. Retrying in ${Math.round(delayMs)}ms...`,
+        lastError.message
+      );
+
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+
+  throw lastError || new Error('Failed to generate diagram after maximum retries');
+}
 
 const generateInteractiveDiagramFlow = ai.defineFlow(
   {
@@ -653,7 +298,6 @@ const generateInteractiveDiagramFlow = ai.defineFlow(
     outputSchema: GenerateInteractiveDiagramOutputSchema,
   },
   async input => {
-    const {output} = await diagramPrompt(input);
-    return output!;
+    return callDiagramPromptWithRetry(input, 3);
   }
 );
