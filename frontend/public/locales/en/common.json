@@ -1,0 +1,116 @@
+{
+  "app": {
+    "name": "visuaLearn",
+    "title": "AI-Powered Interactive 3D Concept Visualizer",
+    "subtitle": "Transform any concept into an interactive 3D visualization"
+  },
+  "header": {
+    "home": "Home",
+    "about": "About",
+    "features": "Features",
+    "contact": "Contact"
+  },
+  "form": {
+    "conceptInput": "Enter a concept",
+    "conceptPlaceholder": "e.g., photosynthesis, DNA replication, quantum entanglement",
+    "conceptHelp": "Enter a concept (2+ words, max 200 characters)",
+    "depthLabel": "Explanation Depth",
+    "depthIntro": "Introductory",
+    "depthIntermediate": "Intermediate",
+    "depthAdvanced": "Advanced",
+    "languageLabel": "Language",
+    "submitButton": "Generate Visualization",
+    "cancelButton": "Cancel",
+    "clearButton": "Clear",
+    "loadingMessage": "Generating visualization... Please wait (3-5 seconds)"
+  },
+  "validation": {
+    "conceptRequired": "Please enter a concept",
+    "conceptTooShort": "Concept must be at least 3 characters",
+    "conceptTooLong": "Concept cannot exceed 200 characters",
+    "conceptMinWords": "Concept must contain at least 2 words",
+    "conceptSingleChar": "Concept cannot contain single-character words",
+    "restrictedKeyword": "This concept contains restricted keywords. Please choose a different topic.",
+    "depthRequired": "Please select an explanation depth",
+    "languageRequired": "Please select a language"
+  },
+  "animation": {
+    "title": "3D Visualization",
+    "loading": "Loading 3D visualization...",
+    "playButton": "Play",
+    "pauseButton": "Pause",
+    "stopButton": "Stop",
+    "speedLabel": "Playback Speed",
+    "speedSlow": "Slow (0.5x)",
+    "speedNormal": "Normal (1x)",
+    "speedFast": "Fast (2x)",
+    "layersLabel": "Visible Layers",
+    "noLayers": "No layers available",
+    "cameraReset": "Reset Camera",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit Fullscreen"
+  },
+  "explanation": {
+    "title": "Explanation",
+    "loading": "Generating explanation...",
+    "copyButton": "Copy Text",
+    "downloadButton": "Download as PDF",
+    "shareButton": "Share"
+  },
+  "export": {
+    "title": "Export Visualization",
+    "formatLabel": "Export Format",
+    "formatGLB": "3D Model (GLB)",
+    "formatJSON": "Data Format (JSON)",
+    "formatSVG": "Vector Image (SVG)",
+    "resolutionLabel": "Resolution",
+    "resolution720p": "HD (720p)",
+    "resolution1080p": "Full HD (1080p)",
+    "resolution2k": "2K Resolution",
+    "includeAnnotations": "Include Annotations",
+    "layersLabel": "Layers to Include",
+    "selectAllLayers": "Select All",
+    "deselectAllLayers": "Deselect All",
+    "exportButton": "Export",
+    "cancelButton": "Cancel",
+    "downloadReady": "Your file is ready to download",
+    "downloadButton": "Download File"
+  },
+  "errors": {
+    "generationFailed": "Failed to generate visualization. Please try again.",
+    "exportFailed": "Failed to export visualization. Please try again.",
+    "networkError": "Network error. Please check your connection and try again.",
+    "timeoutError": "Request took too long. Please try again.",
+    "notFound": "The requested visualization was not found.",
+    "unauthorized": "You are not authorized to perform this action.",
+    "serverError": "Server error. Please try again later.",
+    "unknownError": "An unexpected error occurred. Please try again."
+  },
+  "messages": {
+    "success": "Success!",
+    "warning": "Warning",
+    "info": "Information",
+    "error": "Error",
+    "loading": "Loading...",
+    "noResults": "No results found",
+    "tryAgain": "Try Again",
+    "close": "Close",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View"
+  },
+  "languages": {
+    "en": "English",
+    "ja": "日本語 (Japanese)"
+  },
+  "footer": {
+    "copyright": "© 2025 visuaLearn. All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "contact": "Contact Us",
+    "github": "GitHub"
+  }
+}

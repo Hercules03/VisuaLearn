@@ -1,0 +1,13 @@
+# Frontend specific ignores
+dist/
+.vite/
+*.local
+
+# Testing
+coverage/
+.nyc_output/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*

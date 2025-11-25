@@ -1,0 +1,116 @@
+{
+  "app": {
+    "name": "visuaLearn",
+    "title": "AI搭載インタラクティブ3D概念ビジュアライザー",
+    "subtitle": "あらゆる概念をインタラクティブな3D可視化に変換"
+  },
+  "header": {
+    "home": "ホーム",
+    "about": "について",
+    "features": "機能",
+    "contact": "お問い合わせ"
+  },
+  "form": {
+    "conceptInput": "概念を入力",
+    "conceptPlaceholder": "例：光合成、DNA複製、量子もつれ",
+    "conceptHelp": "概念を入力（2語以上、最大200文字）",
+    "depthLabel": "説明レベル",
+    "depthIntro": "初級",
+    "depthIntermediate": "中級",
+    "depthAdvanced": "上級",
+    "languageLabel": "言語",
+    "submitButton": "ビジュアライゼーション生成",
+    "cancelButton": "キャンセル",
+    "clearButton": "クリア",
+    "loadingMessage": "ビジュアライゼーションを生成中... しばらくお待ちください（3～5秒）"
+  },
+  "validation": {
+    "conceptRequired": "概念を入力してください",
+    "conceptTooShort": "概念は最低3文字以上である必要があります",
+    "conceptTooLong": "概念は200文字を超えることはできません",
+    "conceptMinWords": "概念は最低2語を含む必要があります",
+    "conceptSingleChar": "概念は1文字の単語を含むことはできません",
+    "restrictedKeyword": "この概念には制限されたキーワードが含まれています。別のトピックを選択してください。",
+    "depthRequired": "説明レベルを選択してください",
+    "languageRequired": "言語を選択してください"
+  },
+  "animation": {
+    "title": "3Dビジュアライゼーション",
+    "loading": "3Dビジュアライゼーションを読み込み中...",
+    "playButton": "再生",
+    "pauseButton": "一時停止",
+    "stopButton": "停止",
+    "speedLabel": "再生速度",
+    "speedSlow": "遅い（0.5倍）",
+    "speedNormal": "通常（1倍）",
+    "speedFast": "速い（2倍）",
+    "layersLabel": "表示レイヤー",
+    "noLayers": "利用可能なレイヤーがありません",
+    "cameraReset": "カメラをリセット",
+    "fullscreen": "全画面",
+    "exitFullscreen": "全画面終了"
+  },
+  "explanation": {
+    "title": "説明",
+    "loading": "説明を生成中...",
+    "copyButton": "テキストをコピー",
+    "downloadButton": "PDFとしてダウンロード",
+    "shareButton": "共有"
+  },
+  "export": {
+    "title": "ビジュアライゼーションをエクスポート",
+    "formatLabel": "エクスポート形式",
+    "formatGLB": "3Dモデル（GLB）",
+    "formatJSON": "データ形式（JSON）",
+    "formatSVG": "ベクター画像（SVG）",
+    "resolutionLabel": "解像度",
+    "resolution720p": "HD（720p）",
+    "resolution1080p": "フルHD（1080p）",
+    "resolution2k": "2K解像度",
+    "includeAnnotations": "注釈を含める",
+    "layersLabel": "含めるレイヤー",
+    "selectAllLayers": "すべて選択",
+    "deselectAllLayers": "すべて選択解除",
+    "exportButton": "エクスポート",
+    "cancelButton": "キャンセル",
+    "downloadReady": "ファイルをダウンロードする準備ができています",
+    "downloadButton": "ファイルをダウンロード"
+  },
+  "errors": {
+    "generationFailed": "ビジュアライゼーション生成に失敗しました。もう一度試してください。",
+    "exportFailed": "ビジュアライゼーション出力に失敗しました。もう一度試してください。",
+    "networkError": "ネットワークエラー。接続を確認してもう一度試してください。",
+    "timeoutError": "リクエストに時間がかかりすぎました。もう一度試してください。",
+    "notFound": "要求されたビジュアライゼーションが見つかりません。",
+    "unauthorized": "このアクションを実行する権限がありません。",
+    "serverError": "サーバーエラー。しばらくしてからもう一度試してください。",
+    "unknownError": "予期しないエラーが発生しました。もう一度試してください。"
+  },
+  "messages": {
+    "success": "成功！",
+    "warning": "警告",
+    "info": "情報",
+    "error": "エラー",
+    "loading": "読み込み中...",
+    "noResults": "結果が見つかりません",
+    "tryAgain": "もう一度試す",
+    "close": "閉じる",
+    "confirm": "確認",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "delete": "削除",
+    "edit": "編集",
+    "view": "表示"
+  },
+  "languages": {
+    "en": "English",
+    "ja": "日本語"
+  },
+  "footer": {
+    "copyright": "© 2025 visuaLearn. すべての権利を保有します。",
+    "privacy": "プライバシーポリシー",
+    "terms": "利用規約",
+    "contact": "お問い合わせ",
+    "github": "GitHub"
+  }
+}

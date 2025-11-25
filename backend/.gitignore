@@ -1,0 +1,12 @@
+# Backend specific ignores
+dist/
+*.log
+
+# Testing
+coverage/
+.nyc_output/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
