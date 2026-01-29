@@ -103,7 +103,7 @@ class TestOrchestratorPlanningFailure:
             raise PlanningError("Planning failed")
 
         orchestrator = Orchestrator()
-        orchestrator.planning_agent.plan = mock_plan
+        orchestrator.planning_agent.analyze = mock_plan
 
         with pytest.raises(OrchestrationError, match="Concept analysis failed"):
             await orchestrator.orchestrate("Test", "11-13")
@@ -133,7 +133,7 @@ class TestOrchestratorGenerationFailure:
             raise GenerationError("Generation failed")
 
         orchestrator = Orchestrator()
-        orchestrator.planning_agent.plan = mock_plan
+        orchestrator.planning_agent.analyze = mock_plan
         orchestrator.diagram_generator.generate = mock_generate
 
         with pytest.raises(OrchestrationError, match="Diagram generation failed"):
@@ -167,7 +167,7 @@ class TestOrchestratorReviewFailure:
             raise ReviewError("Review failed")
 
         orchestrator = Orchestrator()
-        orchestrator.planning_agent.plan = mock_plan
+        orchestrator.planning_agent.analyze = mock_plan
         orchestrator.diagram_generator.generate = mock_generate
         orchestrator.review_agent.validate = mock_validate
 
@@ -213,7 +213,7 @@ class TestOrchestratorConversionFailure:
             raise Exception("PNG conversion failed")
 
         orchestrator = Orchestrator()
-        orchestrator.planning_agent.plan = mock_plan
+        orchestrator.planning_agent.analyze = mock_plan
         orchestrator.diagram_generator.generate = mock_generate
         orchestrator.review_agent.validate = mock_validate
         orchestrator.image_converter.to_png = mock_to_png
@@ -272,7 +272,7 @@ class TestOrchestratorStorageFailure:
             deleted_files.append(filename)
 
         orchestrator = Orchestrator()
-        orchestrator.planning_agent.plan = mock_plan
+        orchestrator.planning_agent.analyze = mock_plan
         orchestrator.diagram_generator.generate = mock_generate
         orchestrator.review_agent.validate = mock_validate
         orchestrator.image_converter.to_png = mock_to_png
@@ -334,7 +334,7 @@ class TestOrchestratorSuccessful:
                 return "test_diagram.svg"
 
         orchestrator = Orchestrator()
-        orchestrator.planning_agent.plan = mock_plan
+        orchestrator.planning_agent.analyze = mock_plan
         orchestrator.diagram_generator.generate = mock_generate
         orchestrator.review_agent.validate = mock_validate
         orchestrator.image_converter.to_png = mock_to_png
@@ -418,7 +418,7 @@ class TestOrchestratorSuccessful:
             return f"file.{file_format}"
 
         orchestrator = Orchestrator()
-        orchestrator.planning_agent.plan = mock_plan
+        orchestrator.planning_agent.analyze = mock_plan
         orchestrator.diagram_generator.generate = mock_generate
         orchestrator.review_agent.validate = mock_validate
         orchestrator.image_converter.to_png = mock_to_png
@@ -479,7 +479,7 @@ class TestOrchestratorMetadata:
             return f"file.{file_format}"
 
         orchestrator = Orchestrator()
-        orchestrator.planning_agent.plan = mock_plan
+        orchestrator.planning_agent.analyze = mock_plan
         orchestrator.diagram_generator.generate = mock_generate
         orchestrator.review_agent.validate = mock_validate
         orchestrator.image_converter.to_png = mock_to_png
@@ -540,7 +540,7 @@ class TestOrchestratorMetadata:
             return f"file.{file_format}"
 
         orchestrator = Orchestrator()
-        orchestrator.planning_agent.plan = mock_plan
+        orchestrator.planning_agent.analyze = mock_plan
         orchestrator.diagram_generator.generate = mock_generate
         orchestrator.review_agent.validate = mock_validate
         orchestrator.image_converter.to_png = mock_to_png
@@ -602,7 +602,7 @@ class TestOrchestratorIntegration:
             return f"water_cycle_{len(content)}.{file_format}"
 
         orchestrator = Orchestrator()
-        orchestrator.planning_agent.plan = mock_plan
+        orchestrator.planning_agent.analyze = mock_plan
         orchestrator.diagram_generator.generate = mock_generate
         orchestrator.review_agent.validate = mock_validate
         orchestrator.image_converter.to_png = mock_to_png

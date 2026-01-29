@@ -118,7 +118,7 @@ class Orchestrator:
             )
             step_start = time.time()
 
-            plan = await self.planning_agent.plan(concept, educational_level)
+            plan = await self.planning_agent.analyze(concept)
 
             step_times["planning"] = time.time() - step_start
             logger.info("Planning completed", plan_type=plan.diagram_type)
