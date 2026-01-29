@@ -172,16 +172,14 @@ class TestDiagramGeneratorGenerate:
             await generator.generate(plan)
 
     @pytest.mark.asyncio
-    async def test_generate_invalid_json_response(self, test_env, monkeypatch):
-        """Test generate with invalid JSON response."""
+    async def test_generate_no_xml_in_response(self, test_env, monkeypatch):
+        """Test generate when response has no XML content."""
 
         class MockResponse:
             def __init__(self):
                 self.status_code = 200
-                self.text = "Not valid JSON"
-
-            def json(self):
-                raise json.JSONDecodeError("Invalid JSON", "", 0)
+                # Return streaming response without display_diagram
+                self.text = '{"type":"start"}\n{"type":"finish"}'
 
         async def mock_post(*args, **kwargs):
             return MockResponse()
@@ -212,7 +210,7 @@ class TestDiagramGeneratorGenerate:
             key_insights=["Test"],
         )
 
-        with pytest.raises(GenerationError, match="Invalid JSON"):
+        with pytest.raises(GenerationError, match="Failed to extract diagram"):
             await generator.generate(plan)
 
     @pytest.mark.asyncio
@@ -222,10 +220,11 @@ class TestDiagramGeneratorGenerate:
         class MockResponse:
             def __init__(self):
                 self.status_code = 200
-                self.text = "{}"
-
-            def json(self):
-                return {}  # No 'xml' or 'content' key
+                # Return streaming with tool result but empty input
+                self.text = (
+                    '{"type":"tool-input-available","toolName":"display_diagram","input":{}}\n'
+                    '{"type":"finish"}'
+                )
 
         async def mock_post(*args, **kwargs):
             return MockResponse()
@@ -256,20 +255,23 @@ class TestDiagramGeneratorGenerate:
             key_insights=["Test"],
         )
 
-        with pytest.raises(GenerationError, match="No XML content"):
+        with pytest.raises(GenerationError, match="Failed to extract diagram"):
             await generator.generate(plan)
 
     @pytest.mark.asyncio
-    async def test_generate_invalid_xml_format(self, test_env, monkeypatch):
-        """Test generate with invalid XML format."""
+    async def test_generate_with_valid_streaming_response(self, test_env, monkeypatch):
+        """Test generate with valid streaming response containing XML."""
+        valid_xml = "<mxfile><diagram>Test</diagram></mxfile>"
 
         class MockResponse:
             def __init__(self):
                 self.status_code = 200
-                self.text = '{"xml": "not xml"}'
-
-            def json(self):
-                return {"xml": "not xml"}
+                # Return proper streaming format with display_diagram tool
+                self.text = (
+                    '{"type":"start"}\n'
+                    f'{{"type":"tool-input-available","toolName":"display_diagram","input":{{"xml":"{valid_xml}"}}}}\n'
+                    '{"type":"finish"}'
+                )
 
         async def mock_post(*args, **kwargs):
             return MockResponse()
@@ -300,25 +302,27 @@ class TestDiagramGeneratorGenerate:
             key_insights=["Test"],
         )
 
-        with pytest.raises(GenerationError, match="valid XML"):
-            await generator.generate(plan)
+        result = await generator.generate(plan)
+        assert result == valid_xml
 
 
 class TestDiagramGeneratorSuccess:
     """Test successful diagram generation."""
 
     @pytest.mark.asyncio
-    async def test_generate_success_with_xml_key(self, test_env, monkeypatch):
-        """Test successful generation with 'xml' key in response."""
+    async def test_generate_success_with_streaming(self, test_env, monkeypatch):
+        """Test successful generation with proper streaming response."""
         valid_xml = "<mxfile><diagram>Test</diagram></mxfile>"
 
         class MockResponse:
             def __init__(self):
                 self.status_code = 200
-                self.text = json.dumps({"xml": valid_xml})
-
-            def json(self):
-                return {"xml": valid_xml}
+                # Proper streaming format with tool result
+                self.text = (
+                    '{"type":"start"}\n'
+                    f'{{"type":"tool-input-available","toolName":"display_diagram","input":{{"xml":"{valid_xml}"}}}}\n'
+                    '{"type":"finish"}'
+                )
 
         async def mock_post(*args, **kwargs):
             return MockResponse()
@@ -353,17 +357,20 @@ class TestDiagramGeneratorSuccess:
         assert result == valid_xml
 
     @pytest.mark.asyncio
-    async def test_generate_success_with_content_key(self, test_env, monkeypatch):
-        """Test successful generation with 'content' key in response."""
+    async def test_generate_success_with_fallback_xml_parsing(self, test_env, monkeypatch):
+        """Test successful generation with fallback XML extraction."""
         valid_xml = "<mxfile><diagram>Test</diagram></mxfile>"
 
         class MockResponse:
             def __init__(self):
                 self.status_code = 200
-                self.text = json.dumps({"content": valid_xml})
-
-            def json(self):
-                return {"content": valid_xml}
+                # Response with XML but not in proper streaming format
+                # Tests the fallback XML extraction logic
+                self.text = (
+                    'some text\n'
+                    f'{valid_xml}\n'
+                    'more text'
+                )
 
         async def mock_post(*args, **kwargs):
             return MockResponse()
@@ -405,10 +412,12 @@ class TestDiagramGeneratorSuccess:
         class MockResponse:
             def __init__(self):
                 self.status_code = 200
-                self.text = json.dumps({"xml": valid_xml})
-
-            def json(self):
-                return {"xml": valid_xml}
+                # Proper streaming format
+                self.text = (
+                    '{"type":"start"}\n'
+                    f'{{"type":"tool-input-available","toolName":"display_diagram","input":{{"xml":"{valid_xml}"}}}}\n'
+                    '{"type":"finish"}'
+                )
 
         async def mock_post(*args, **kwargs):
             return MockResponse()

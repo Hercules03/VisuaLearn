@@ -12,23 +12,18 @@ from app.services.planning_agent import PlanningOutput
 
 
 class DiagramGenerator:
-    """AI service for generating draw.io XML diagrams."""
+    """AI service for generating draw.io XML diagrams via next-ai-draw-io."""
 
     def __init__(self):
-        """Initialize diagram generator with configuration."""
+        """Initialize diagram generator with service configuration."""
         self.timeout = settings.generation_timeout
         self.drawio_url = settings.drawio_service_url
-        logger.info(
-            "Diagram generator initialized",
-            url=self.drawio_url,
-            timeout=self.timeout,
-        )
 
     async def generate(self, plan: PlanningOutput) -> str:
         """Generate diagram XML from planning specifications.
 
         Creates a draw.io format XML diagram based on the provided planning
-        output using the next-ai-draw-io service.
+        output using the next-ai-draw-io chat API with streaming.
 
         Args:
             plan: PlanningOutput with diagram specifications
@@ -71,7 +66,9 @@ class DiagramGenerator:
             raise GenerationError(f"Failed to generate diagram: {str(e)}")
 
     async def _generate_internal(self, plan: PlanningOutput) -> str:
-        """Internal generation implementation using next-ai-draw-io.
+        """Internal generation implementation via next-ai-draw-io chat API.
+
+        Calls the streaming /api/chat endpoint and extracts XML from response.
 
         Args:
             plan: PlanningOutput with diagram specifications
@@ -80,37 +77,30 @@ class DiagramGenerator:
             draw.io XML string
 
         Raises:
-            GenerationError: If generation or API call fails
+            GenerationError: If generation fails
         """
-        # Create prompt for diagram generation
-        prompt = f"""Create a detailed {plan.diagram_type} diagram in draw.io format for the following educational concept.
+        # Create user message from planning output
+        user_message = self._create_user_message(plan)
 
-Concept: {plan.concept}
-Target Age Group: {plan.educational_level}
+        # Prepare request payload for next-ai-draw-io chat API
+        payload = {
+            "messages": [
+                {
+                    "role": "user",
+                    "parts": [{"type": "text", "text": user_message}],
+                }
+            ],
+            "xml": "",  # Empty initial XML
+            "previousXml": "",  # No previous diagram
+        }
 
-Elements to Include:
-{chr(10).join(f"- {component}" for component in plan.components)}
-
-Relationships Between Elements:
-{chr(10).join(f"- {rel['from']} -> {rel['to']}: {rel['label']}" for rel in plan.relationships)}
-
-Key Teaching Points:
-{chr(10).join(f"- {insight}" for insight in plan.key_insights)}
-
-Requirements:
-1. Create a clear, educational {plan.diagram_type}
-2. Include all specified elements with proper labels
-3. Show relationships clearly
-4. Use appropriate colors and styling for {plan.educational_level}
-5. Ensure the diagram is pedagogically sound
-6. Output ONLY valid draw.io XML, no markdown or code blocks"""
+        logger.debug(f"Sending request to {self.drawio_url}/api/chat")
 
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                # Call next-ai-draw-io service
                 response = await client.post(
-                    f"{self.drawio_url}/api/diagram",
-                    json={"prompt": prompt, "format": "xml"},
+                    f"{self.drawio_url}/api/chat",
+                    json=payload,
                 )
 
                 if response.status_code != 200:
@@ -122,39 +112,125 @@ Requirements:
                         f"Draw.io service returned {response.status_code}: {response.text[:200]}"
                     )
 
-                # Parse response
-                try:
-                    result = response.json()
-                except json.JSONDecodeError as e:
-                    logger.error(f"Failed to parse draw.io response: {e}")
+                # Parse streaming response to extract XML
+                xml = await self._extract_xml_from_stream(response.text)
+                if not xml:
+                    logger.error("No XML content found in draw.io response")
                     raise GenerationError(
-                        f"Invalid JSON response from draw.io service: {e}"
+                        "Failed to extract diagram from draw.io response"
                     )
 
-                # Extract XML from response
-                xml = result.get("xml") or result.get("content")
-                if not xml:
-                    logger.error("No XML in draw.io response", response=result)
-                    raise GenerationError("No XML content in draw.io response")
-
-                # Validate XML structure
-                if not xml.strip().startswith("<"):
-                    logger.error("Invalid XML format from draw.io")
-                    raise GenerationError("Response does not contain valid XML")
-
-                logger.debug(f"Generated XML length: {len(xml)} chars")
+                logger.debug(f"Generated XML length: {len(xml)}")
                 return xml
 
-        except httpx.TimeoutException:
-            logger.error("HTTP timeout calling draw.io service")
-            raise GenerationError("Draw.io service request timed out")
-        except httpx.ConnectError as e:
-            logger.error(f"Failed to connect to draw.io service: {e}")
+        except asyncio.TimeoutError:
+            logger.error(f"Diagram generation timed out after {self.timeout}s")
             raise GenerationError(
-                f"Cannot connect to draw.io service at {self.drawio_url}"
+                f"Diagram generation timed out after {self.timeout}s"
+            )
+        except httpx.ConnectError as e:
+            logger.error(f"Cannot connect to diagram service at {self.drawio_url}: {e}")
+            raise GenerationError(
+                f"Cannot connect to diagram service. Is it running at {self.drawio_url}?"
             )
         except GenerationError:
             raise
         except Exception as e:
-            logger.error(f"Unexpected error in diagram generation: {e}")
-            raise GenerationError(f"Unexpected error: {str(e)}")
+            logger.error(f"Diagram generation failed: {e}")
+            raise GenerationError(f"Failed to generate diagram: {str(e)}")
+
+    def _create_user_message(self, plan: PlanningOutput) -> str:
+        """Create a structured prompt from planning output.
+
+        Args:
+            plan: PlanningOutput with diagram specifications
+
+        Returns:
+            Formatted user message for the chat API
+        """
+        components_str = "\n".join(f"  - {c}" for c in plan.components)
+        relationships_str = "\n".join(
+            f"  - {r['from']} → {r['to']}: {r['label']}" for r in plan.relationships
+        )
+        insights_str = "\n".join(f"  - {i}" for i in plan.key_insights)
+        criteria_str = "\n".join(f"  - {c}" for c in plan.success_criteria)
+
+        message = f"""Create an educational diagram for:
+
+**Concept**: {plan.concept}
+**Diagram Type**: {plan.diagram_type}
+**Age Level**: {plan.educational_level}
+
+**Components to include**:
+{components_str}
+
+**Relationships**:
+{relationships_str}
+
+**Key Teaching Points**:
+{insights_str}
+
+**Success Criteria**:
+{criteria_str}
+
+Generate a clear, pedagogically sound diagram using draw.io. The diagram should be appropriate for ages {plan.educational_level} and include all components with proper relationships shown."""
+
+        return message
+
+    async def _extract_xml_from_stream(self, response_text: str) -> str:
+        """Extract XML from next-ai-draw-io streaming response.
+
+        The streaming response contains multiple JSON chunks with tool results.
+        We need to extract the XML content from display_diagram tool result.
+
+        Args:
+            response_text: Raw streaming response text
+
+        Returns:
+            Extracted XML string or None if not found
+        """
+        logger.debug(f"Parsing streaming response, length: {len(response_text)}")
+
+        # Split by newlines to handle streaming format
+        lines = response_text.strip().split("\n")
+        xml_content = None
+
+        for line in lines:
+            if not line.strip():
+                continue
+
+            try:
+                # Parse each line as JSON
+                data = json.loads(line)
+
+                # Look for display_diagram tool result with XML
+                if isinstance(data, dict):
+                    # Check if this is a tool-input with display_diagram
+                    if (
+                        data.get("type") == "tool-input-available"
+                        and data.get("toolName") == "display_diagram"
+                    ):
+                        input_data = data.get("input", {})
+                        if isinstance(input_data, dict) and "xml" in input_data:
+                            xml_content = input_data["xml"]
+                            logger.debug(
+                                f"Found XML in tool-input-available, length: {len(xml_content)}"
+                            )
+                            break
+
+            except json.JSONDecodeError:
+                # This line might not be valid JSON, continue
+                continue
+
+        if not xml_content:
+            logger.warning(
+                "Could not extract XML from streaming response, trying direct parse"
+            )
+            # Fallback: try to find XML directly in response
+            if "<mxfile" in response_text:
+                start = response_text.find("<mxfile")
+                end = response_text.rfind("</mxfile>")
+                if start >= 0 and end > start:
+                    xml_content = response_text[start : end + 9]
+
+        return xml_content
