@@ -113,9 +113,22 @@ class DiagramGenerator:
                     )
 
                 # Parse streaming response to extract XML
+                logger.debug(
+                    "Raw response received",
+                    response_length=len(response.text),
+                    lines_count=len(response.text.split('\n')),
+                )
                 xml = await self._extract_xml_from_stream(response.text)
+                logger.debug(
+                    "XML extraction result",
+                    xml_length=len(xml) if xml else 0,
+                    xml_cells=xml.count("<mxCell") if xml else 0,
+                )
                 if not xml:
-                    logger.error("No XML content found in draw.io response")
+                    logger.error(
+                        "No XML content found in draw.io response",
+                        response_preview=response.text[:1000],
+                    )
                     raise GenerationError(
                         "Failed to extract diagram from draw.io response"
                     )
@@ -155,16 +168,16 @@ class DiagramGenerator:
         insights_str = "\n".join(f"  - {i}" for i in plan.key_insights)
         criteria_str = "\n".join(f"  - {c}" for c in plan.success_criteria)
 
-        message = f"""Create an educational diagram for:
+        message = f"""Create a COMPLETE educational diagram with ALL components and relationships for:
 
 **Concept**: {plan.concept}
 **Diagram Type**: {plan.diagram_type}
 **Age Level**: {plan.educational_level}
 
-**Components to include**:
+**MUST INCLUDE All These Components** (total: {len(plan.components)}):
 {components_str}
 
-**Relationships**:
+**MUST INCLUDE All These Relationships** (total: {len(plan.relationships)}):
 {relationships_str}
 
 **Key Teaching Points**:
@@ -173,18 +186,26 @@ class DiagramGenerator:
 **Success Criteria**:
 {criteria_str}
 
-Generate a clear, pedagogically sound diagram using draw.io. The diagram should be appropriate for ages {plan.educational_level} and include all components with proper relationships shown."""
+IMPORTANT:
+1. Include EVERY component listed above in the diagram
+2. Show ALL relationships between components
+3. Make labels clear and readable
+4. Use appropriate shapes and colors for visual clarity
+5. Return complete draw.io XML with ALL mxCell elements
+
+Generate a clear, complete, pedagogically sound diagram using draw.io. The diagram must include all {len(plan.components)} components with all {len(plan.relationships)} relationships shown. The diagram should be appropriate for ages {plan.educational_level}."""
 
         return message
 
     async def _extract_xml_from_stream(self, response_text: str) -> str:
         """Extract XML from next-ai-draw-io streaming response.
 
-        The streaming response contains multiple JSON chunks with tool results.
+        The streaming response is in Server-Sent Events (SSE) format with
+        multiple JSON chunks. Each line starts with "data: " and contains JSON.
         We need to extract the XML content from display_diagram tool result.
 
         Args:
-            response_text: Raw streaming response text
+            response_text: Raw streaming response text in SSE format
 
         Returns:
             Extracted XML string or None if not found
@@ -194,18 +215,25 @@ Generate a clear, pedagogically sound diagram using draw.io. The diagram should 
         # Split by newlines to handle streaming format
         lines = response_text.strip().split("\n")
         xml_content = None
+        event_count = 0
 
         for line in lines:
             if not line.strip():
                 continue
 
+            # Handle Server-Sent Events (SSE) format with "data: " prefix
+            json_str = line
+            if json_str.startswith("data: "):
+                json_str = json_str[6:]  # Remove "data: " prefix
+
             try:
                 # Parse each line as JSON
-                data = json.loads(line)
+                data = json.loads(json_str)
+                event_count += 1
 
                 # Look for display_diagram tool result with XML
                 if isinstance(data, dict):
-                    # Check if this is a tool-input with display_diagram
+                    # Check if this is a tool-input-available with display_diagram
                     if (
                         data.get("type") == "tool-input-available"
                         and data.get("toolName") == "display_diagram"
@@ -213,8 +241,12 @@ Generate a clear, pedagogically sound diagram using draw.io. The diagram should 
                         input_data = data.get("input", {})
                         if isinstance(input_data, dict) and "xml" in input_data:
                             xml_content = input_data["xml"]
+                            cell_count = xml_content.count("<mxCell")
                             logger.debug(
-                                f"Found XML in tool-input-available, length: {len(xml_content)}"
+                                f"Found XML in tool-input-available",
+                                xml_length=len(xml_content),
+                                cell_count=cell_count,
+                                event_index=event_count,
                             )
                             break
 
@@ -233,4 +265,47 @@ Generate a clear, pedagogically sound diagram using draw.io. The diagram should 
                 if start >= 0 and end > start:
                     xml_content = response_text[start : end + 9]
 
+        # Wrap cell fragments in proper draw.io structure if needed
+        if xml_content and not xml_content.strip().startswith("<mxfile"):
+            cell_count = xml_content.count("<mxCell")
+            logger.debug(
+                f"Wrapping cell fragments in mxfile structure",
+                fragment_length=len(xml_content),
+                cell_count=cell_count,
+            )
+            # Validate we have a reasonable number of cells before wrapping
+            if cell_count < 2:
+                logger.warning(
+                    f"Very few cells in XML ({cell_count}), response might be incomplete",
+                    xml_preview=xml_content[:500],
+                )
+            xml_content = self._wrap_cells_in_mxfile(xml_content)
+
         return xml_content
+
+    def _wrap_cells_in_mxfile(self, cells_xml: str) -> str:
+        """Wrap raw cell XML in a proper draw.io mxfile structure.
+
+        Next-ai-draw-io returns only the cell elements. We need to wrap them
+        in the proper draw.io XML structure with mxfile, diagram, mxGraphModel, and root.
+
+        Args:
+            cells_xml: Raw cell XML fragments from the API
+
+        Returns:
+            Complete draw.io XML with proper structure
+        """
+        # Wrap in proper draw.io structure
+        wrapped = f"""<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" modified="2024-01-01T00:00:00Z" agent="VisuaLearn" version="1.0">
+  <diagram name="Diagram">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        {cells_xml}
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>"""
+        return wrapped

@@ -1,6 +1,6 @@
 """Pydantic models for API requests and responses."""
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -15,9 +15,9 @@ class DiagramRequest(BaseModel):
         description="Core concept to explain with diagram",
     )
     educational_level: str = Field(
-        ...,
+        default="8-10",
         pattern="^(8-10|11-13|14-15)$",
-        description="Target age group (8-10, 11-13, or 14-15)",
+        description="Target age group (8-10, 11-13, or 14-15). Defaults to 8-10 if not provided.",
     )
 
 
@@ -80,3 +80,31 @@ class ErrorResponse(BaseModel):
     error: str = Field(..., description="Error type")
     message: str = Field(..., description="User-friendly error message")
     details: str = Field(default="", description="Technical details for debugging")
+
+
+class ProgressEvent(BaseModel):
+    """Progress update event for streaming responses."""
+
+    type: Literal["progress", "complete", "error"] = Field(
+        ..., description="Event type"
+    )
+    stage: Literal[
+        "planning", "generation", "review", "conversion", "storage"
+    ] = Field(..., description="Current pipeline stage")
+    status: str = Field(..., description="Human-readable status message")
+    progress: float = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Progress percentage (0-100)",
+    )
+    elapsed_time: float = Field(
+        default=0, description="Elapsed time for this stage in seconds"
+    )
+    error: str = Field(
+        default="", description="Error message if type is 'error'"
+    )
+    data: Any = Field(
+        default=None,
+        description="Additional data (e.g., final result on completion)",
+    )
