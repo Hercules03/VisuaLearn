@@ -15,7 +15,7 @@ class TestImageConverterInit:
         """Test successful initialization creates converter."""
         converter = ImageConverter()
         assert converter.timeout == 4
-        assert converter.drawio_url == "http://localhost:3001"
+        assert converter.drawio_url == "http://localhost:6002"
 
 
 class TestImageConverterInputValidation:
@@ -163,9 +163,9 @@ class TestImageConverterConfiguration:
 
     def test_converter_drawio_url_from_settings(self, test_env):
         """Test converter uses correct draw.io URL from settings."""
-        # test_env sets DRAWIO_SERVICE_URL=http://localhost:3001
+        # test_env sets DRAWIO_SERVICE_URL=http://localhost:6002
         converter = ImageConverter()
-        assert converter.drawio_url == "http://localhost:3001"
+        assert converter.drawio_url == "http://localhost:6002"
 
 
 class TestImageConverterPngConversion:

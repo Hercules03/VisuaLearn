@@ -7,7 +7,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export interface DiagramRequest {
   concept: string;
-  educational_level: 'elementary' | 'intermediate' | 'advanced';
+  educational_level: '8-10' | '11-13' | '14-15';
 }
 
 export interface DiagramPlan {

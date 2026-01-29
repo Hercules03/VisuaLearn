@@ -49,7 +49,7 @@ function App() {
       // Call the real API
       const response = await generateDiagram({
         concept: trimmed,
-        educational_level: 'intermediate', // Default level
+        educational_level: '11-13', // Default to ages 11-13 (intermediate)
       });
 
       // Create API URL for the image - assuming backend serves files at /api/export/{filename}
