@@ -1,0 +1,2 @@
+Please do not use emoji in no matter code or markdown or frontend
+Please do not use default value/ mock data for the fallback. If there is an error just raise the error. Otherwise I cant spot out the bug.

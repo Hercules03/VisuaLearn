@@ -1,0 +1,63 @@
+# VisuaLearn Docker Compose Configuration
+# Runs the complete VisuaLearn stack for development and testing
+#
+# Services:
+# - backend: FastAPI server (port 8000)
+# - frontend: Vite dev server (port 5173)
+# - next-ai-draw-io: Drawing service (port 3001)
+
+version: '3.8'
+
+services:
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}
+      - DRAWIO_SERVICE_URL=http://next-ai-draw-io:3001
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/tests:/app/tests
+    depends_on:
+      - next-ai-draw-io
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Frontend Vite Dev Server
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    depends_on:
+      - backend
+
+  # next-ai-draw-io Service
+  next-ai-draw-io:
+    image: ghcr.io/dayuanjiang/next-ai-draw-io:latest
+    ports:
+      - "3001:3001"
+    environment:
+      - AI_PROVIDER=gemini
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:?GOOGLE_API_KEY is required}
+      - NODE_ENV=development
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
