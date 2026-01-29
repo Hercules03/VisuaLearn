@@ -92,26 +92,26 @@ class TestPipelineComponents:
     def test_planning_agent_valid_input(self, test_env):
         """Test planning agent accepts valid input."""
         agent = PlanningAgent()
-        assert agent.timeout == 5
+        assert agent.timeout == 15
         assert hasattr(agent, 'client')  # Verify Gemini client is initialized
 
     def test_review_agent_valid_initialization(self, test_env):
         """Test review agent initialization."""
         agent = ReviewAgent()
-        assert agent.timeout == 3
+        assert agent.timeout == 10
         assert agent.max_iterations == 3
 
     def test_image_converter_valid_initialization(self, test_env):
         """Test image converter initialization with correct port."""
         converter = ImageConverter()
-        assert converter.timeout == 4
+        assert converter.timeout == 8
         # Critical: Verify port is 6002, not 3001
         assert converter.drawio_url == "http://localhost:6002"
 
     def test_diagram_generator_valid_initialization(self, test_env):
         """Test diagram generator initialization with correct port."""
         generator = DiagramGenerator()
-        assert generator.timeout == 12
+        assert generator.timeout == 20
         # Critical: Verify port is 6002, not 3001
         assert generator.drawio_url == "http://localhost:6002"
 
@@ -142,10 +142,10 @@ class TestPipelineIntegration:
         orchestrator = Orchestrator()
 
         # Verify each component has timeout configured
-        assert orchestrator.planning_agent.timeout == 5
-        assert orchestrator.diagram_generator.timeout == 12
-        assert orchestrator.review_agent.timeout == 3
-        assert orchestrator.image_converter.timeout == 4
+        assert orchestrator.planning_agent.timeout == 15
+        assert orchestrator.diagram_generator.timeout == 20
+        assert orchestrator.review_agent.timeout == 10
+        assert orchestrator.image_converter.timeout == 8
 
 
 class TestEndToEndWorkflow:
@@ -415,10 +415,10 @@ class TestSystemReadiness:
     def test_all_services_have_correct_timeouts(self, test_env):
         """Test all services have configured timeouts."""
         orchestrator = Orchestrator()
-        assert orchestrator.planning_agent.timeout == 5
-        assert orchestrator.diagram_generator.timeout == 12
-        assert orchestrator.review_agent.timeout == 3
-        assert orchestrator.image_converter.timeout == 4
+        assert orchestrator.planning_agent.timeout == 15
+        assert orchestrator.diagram_generator.timeout == 20
+        assert orchestrator.review_agent.timeout == 10
+        assert orchestrator.image_converter.timeout == 8
 
     def test_all_services_use_correct_port(self, test_env):
         """Test all services configured for correct port (6002)."""

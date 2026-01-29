@@ -57,7 +57,7 @@ class TestPlanningAgentInit:
         """Test successful initialization creates agent."""
         mock_google_generativeai.GenerativeModel.return_value = MagicMock()
         agent = PlanningAgent()
-        assert agent.timeout == 5
+        assert agent.timeout == 15
 
 
 class TestPlanningAgentAnalyze:

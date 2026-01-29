@@ -149,13 +149,13 @@ def test_env(tmp_path, monkeypatch):
     """Create test environment with temporary directory."""
     env_vars = {
         "GOOGLE_API_KEY": "test-key-123",
-        "DRAWIO_SERVICE_URL": "http://localhost:3001",
+        "DRAWIO_SERVICE_URL": "http://localhost:6002",
         "DEBUG": "true",
         "LOG_LEVEL": "DEBUG",
-        "PLANNING_TIMEOUT": "5",
-        "GENERATION_TIMEOUT": "12",
-        "REVIEW_TIMEOUT": "3",
-        "IMAGE_TIMEOUT": "4",
+        "PLANNING_TIMEOUT": "15",
+        "GENERATION_TIMEOUT": "20",
+        "REVIEW_TIMEOUT": "10",
+        "IMAGE_TIMEOUT": "8",
         "REVIEW_MAX_ITERATIONS": "3",
         "TEMP_DIR": str(tmp_path / "temp"),
         "TEMP_FILE_TTL": "3600",

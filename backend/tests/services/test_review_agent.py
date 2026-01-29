@@ -55,7 +55,7 @@ class TestReviewAgentInit:
         """Test successful initialization creates agent."""
         mock_google_generativeai.GenerativeModel.return_value = MagicMock()
         agent = ReviewAgent()
-        assert agent.timeout == 3
+        assert agent.timeout == 10
         assert agent.max_iterations == 3
 
 

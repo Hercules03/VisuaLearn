@@ -16,7 +16,7 @@ class TestDiagramGeneratorInit:
     def test_init_creates_generator(self, test_env):
         """Test successful initialization creates generator."""
         generator = DiagramGenerator()
-        assert generator.timeout == 12
+        assert generator.timeout == 20
         assert generator.drawio_url == "http://localhost:6002"
 
 
