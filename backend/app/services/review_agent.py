@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from concurrent.futures import ThreadPoolExecutor
 
 from loguru import logger
 
@@ -55,6 +56,7 @@ class ReviewAgent:
         self.timeout = settings.review_timeout
         self.gemini_api_key = settings.google_api_key
         self.max_iterations = settings.review_max_iterations
+        self.executor = ThreadPoolExecutor(max_workers=1)
 
         # Initialize Gemini client
         try:
@@ -179,8 +181,13 @@ Respond ONLY with valid JSON in this exact structure (no markdown, no code block
 }}"""
 
         try:
-            # Call Gemini API
-            response = self.client.generate_content(prompt)
+            # Call Gemini API in thread pool (blocking call)
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                self.executor,
+                self.client.generate_content,
+                prompt
+            )
             response_text = response.text
 
             logger.debug(f"Gemini review response: {response_text[:200]}...")

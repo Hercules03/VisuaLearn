@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from concurrent.futures import ThreadPoolExecutor
 
 from loguru import logger
 
@@ -61,6 +62,7 @@ class PlanningAgent:
         """Initialize planning agent with Gemini client."""
         self.timeout = settings.planning_timeout
         self.gemini_api_key = settings.google_api_key
+        self.executor = ThreadPoolExecutor(max_workers=1)
 
         # Initialize Gemini client
         try:
@@ -183,8 +185,13 @@ Ensure:
 - Key insights highlight important teaching points"""
 
         try:
-            # Call Gemini API
-            response = self.client.generate_content(prompt)
+            # Call Gemini API in thread pool (blocking call)
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                self.executor,
+                self.client.generate_content,
+                prompt
+            )
             response_text = response.text
 
             logger.debug(f"Gemini response: {response_text[:200]}...")
