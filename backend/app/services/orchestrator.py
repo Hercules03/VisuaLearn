@@ -25,9 +25,10 @@ class OrchestrationResult:
 
     def __init__(
         self,
-        png_filename: str,
         svg_filename: str,
+        xml_filename: str,
         xml_content: str,
+        svg_content: str,
         plan: PlanningOutput,
         review_score: int,
         iterations: int,
@@ -37,18 +38,20 @@ class OrchestrationResult:
         """Initialize orchestration result.
 
         Args:
-            png_filename: Filename of saved PNG image
             svg_filename: Filename of saved SVG image
+            xml_filename: Filename of saved XML diagram
             xml_content: Raw XML diagram content
+            svg_content: Raw SVG diagram content
             plan: Planning output with concept analysis
             review_score: Final review score (0-100)
             iterations: Number of review iterations performed
             total_time_seconds: Total time for entire pipeline
             metadata: Additional metadata (step times, refinements)
         """
-        self.png_filename = png_filename
         self.svg_filename = svg_filename
+        self.xml_filename = xml_filename
         self.xml_content = xml_content
+        self.svg_content = svg_content
         self.plan = plan
         self.review_score = review_score
         self.iterations = iterations
@@ -58,9 +61,10 @@ class OrchestrationResult:
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""
         return {
-            "png_filename": self.png_filename,
             "svg_filename": self.svg_filename,
+            "xml_filename": self.xml_filename,
             "xml_content": self.xml_content,
+            "svg_content": self.svg_content,
             "plan": self.plan.to_dict(),
             "review_score": self.review_score,
             "iterations": self.iterations,
@@ -91,8 +95,8 @@ class Orchestrator:
         1. Planning: Analyze concept and create diagram plan
         2. Generation: Generate XML diagram from plan
         3. Review: Review quality (iterate up to 3 times if needed)
-        4. Conversion: Convert XML to PNG and SVG images
-        5. Storage: Save files to temporary storage
+        4. Conversion: Convert XML to SVG format
+        5. Storage: Save SVG and XML files to temporary storage
 
         Args:
             concept: Core concept to explain with diagram
@@ -106,8 +110,8 @@ class Orchestrator:
         """
         start_time = time.time()
         step_times = {}
-        png_filename: Optional[str] = None
         svg_filename: Optional[str] = None
+        xml_filename: Optional[str] = None
 
         try:
             # Step 1: Planning
@@ -209,34 +213,30 @@ class Orchestrator:
                     xml_length=len(xml_content),
                 )
 
-            # Step 4: Image Conversion (parallel)
+            # Step 4: Image Conversion (SVG only, no Playwright)
             step_start = time.time()
 
-            png_bytes, svg_str = await asyncio.gather(
-                self.image_converter.to_png(xml_content),
-                self.image_converter.to_svg(xml_content),
-            )
+            svg_str = await self.image_converter.to_svg(xml_content)
 
             step_times["conversion"] = time.time() - step_start
             logger.info(
-                "Image conversion completed",
-                png_size=len(png_bytes),
+                "SVG conversion completed",
                 svg_size=len(svg_str),
             )
 
-            # Step 5: File Storage
+            # Step 5: File Storage (SVG and XML)
             step_start = time.time()
 
-            png_filename, svg_filename = await asyncio.gather(
-                self.file_manager.save_file(png_bytes, "png"),
+            svg_filename, xml_filename = await asyncio.gather(
                 self.file_manager.save_file(svg_str.encode("utf-8"), "svg"),
+                self.file_manager.save_file(xml_content.encode("utf-8"), "xml"),
             )
 
             step_times["storage"] = time.time() - step_start
             logger.info(
                 "Files stored",
-                png_filename=png_filename,
                 svg_filename=svg_filename,
+                xml_filename=xml_filename,
             )
 
             # Construct result
@@ -250,9 +250,10 @@ class Orchestrator:
             }
 
             result = OrchestrationResult(
-                png_filename=png_filename,
                 svg_filename=svg_filename,
+                xml_filename=xml_filename,
                 xml_content=xml_content,
+                svg_content=svg_str,
                 plan=plan,
                 review_score=review_result.score,
                 iterations=iteration,
@@ -277,17 +278,17 @@ class Orchestrator:
             raise OrchestrationError(f"Diagram generation failed: {str(e)}")
         except Exception as e:
             # Cleanup generated files on error
-            if png_filename:
-                try:
-                    await self.file_manager.delete_file(png_filename)
-                except FileOperationError as cleanup_error:
-                    logger.warning(f"Failed to cleanup PNG file: {cleanup_error}")
-
             if svg_filename:
                 try:
                     await self.file_manager.delete_file(svg_filename)
                 except FileOperationError as cleanup_error:
                     logger.warning(f"Failed to cleanup SVG file: {cleanup_error}")
+
+            if xml_filename:
+                try:
+                    await self.file_manager.delete_file(xml_filename)
+                except FileOperationError as cleanup_error:
+                    logger.warning(f"Failed to cleanup XML file: {cleanup_error}")
 
             logger.error(f"Orchestration failed: {e}")
             raise OrchestrationError(f"Pipeline failed: {str(e)}")

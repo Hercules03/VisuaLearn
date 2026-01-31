@@ -11,13 +11,13 @@ export interface Message {
   timestamp: number;
   diagram?: {
     image: string;
+    svg_content: string;
     xml: string;
     export_urls: {
       png: string;
       svg: string;
       xml: string;
     };
-    pngFilename?: string;
     svgFilename?: string;
     metadata?: {
       score: number;
@@ -80,9 +80,10 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           {message.content}
         </div>
         {!isUser && message.diagram && (
-          <DiagramCard 
-            image={message.diagram.image} 
-            exportUrls={message.diagram.export_urls} 
+          <DiagramCard
+            image={message.diagram.image}
+            svgContent={message.diagram.svg_content}
+            exportUrls={message.diagram.export_urls}
           />
         )}
       </div>

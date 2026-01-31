@@ -62,8 +62,9 @@ class DiagramMetadata(BaseModel):
 class DiagramResponse(BaseModel):
     """Response model for successful diagram generation."""
 
-    png_filename: str = Field(..., description="Filename of generated PNG image")
-    svg_filename: str = Field(..., description="Filename of generated SVG image")
+    svg_filename: str = Field(..., description="Filename of generated SVG image for download")
+    xml_filename: str = Field(..., description="Filename of generated XML for download/editing")
+    svg_content: str = Field(..., description="SVG diagram content for inline display")
     xml_content: str = Field(..., description="Raw draw.io XML diagram")
     plan: PlanningData = Field(..., description="Planning analysis")
     review_score: int = Field(

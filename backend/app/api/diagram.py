@@ -4,22 +4,24 @@ import json
 from typing import AsyncGenerator
 
 from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from loguru import logger
 
-from app.errors import OrchestrationError
+from app.errors import FileOperationError, OrchestrationError
 from app.models.schemas import (
     DiagramRequest,
     DiagramResponse,
     ErrorResponse,
     ProgressEvent,
 )
+from app.services.file_manager import FileManager
 from app.services.orchestrator import Orchestrator
 
 router = APIRouter(prefix="/api", tags=["diagram"])
 
-# Shared orchestrator instance
+# Shared service instances
 orchestrator = Orchestrator()
+file_manager = FileManager()
 
 
 @router.post(
@@ -38,8 +40,8 @@ async def generate_diagram(request: DiagramRequest) -> DiagramResponse:
     1. Planning: Analyze concept and create diagram plan
     2. Generation: Generate XML diagram from plan
     3. Review: Quality check with potential iteration
-    4. Conversion: Convert to PNG and SVG formats
-    5. Storage: Save files for download
+    4. Conversion: Convert XML to SVG format
+    5. Storage: Save SVG and XML files for download
 
     Args:
         request: DiagramRequest with concept (required) and optional educational_level.
@@ -74,8 +76,9 @@ async def generate_diagram(request: DiagramRequest) -> DiagramResponse:
 
         # Convert orchestrator result to API response
         return DiagramResponse(
-            png_filename=result.png_filename,
             svg_filename=result.svg_filename,
+            xml_filename=result.xml_filename,
+            svg_content=result.svg_content,
             xml_content=result.xml_content,
             plan={
                 "concept": result.plan.concept,
@@ -208,8 +211,9 @@ async def generate_diagram_stream(request: DiagramRequest):
 
             # Convert orchestrator result to API response
             diagram_response = DiagramResponse(
-                png_filename=result.png_filename,
                 svg_filename=result.svg_filename,
+                xml_filename=result.xml_filename,
+                svg_content=result.svg_content,
                 xml_content=result.xml_content,
                 plan={
                     "concept": result.plan.concept,
@@ -326,3 +330,82 @@ async def generate_diagram_stream(request: DiagramRequest):
             "Connection": "keep-alive",
         },
     )
+
+
+@router.get(
+    "/export/{filename}",
+    responses={
+        200: {"description": "File content"},
+        404: {"model": ErrorResponse, "description": "File not found"},
+        400: {"model": ErrorResponse, "description": "Invalid filename"},
+    },
+)
+async def export_diagram_file(filename: str):
+    """Export generated diagram file (SVG or XML).
+
+    Downloads a previously generated SVG or XML file.
+
+    Args:
+        filename: UUID-based filename (e.g., "abc123.svg" or "def456.xml")
+
+    Returns:
+        File content with appropriate content-type header
+
+    Raises:
+        HTTPException: If file not found or invalid filename
+    """
+    logger.info("Export requested", filename=filename)
+
+    try:
+        # Validate filename format
+        if not filename or "/" in filename or "\\" in filename:
+            raise FileOperationError(f"Invalid filename: {filename}")
+
+        # Check file extension
+        if not filename.endswith(".svg") and not filename.endswith(".xml"):
+            raise FileOperationError(f"Unsupported file type: {filename}")
+
+        # Get file content
+        content = await file_manager.get_file(filename)
+        logger.info("File exported", filename=filename, size_bytes=len(content))
+
+        # Determine content type and filename for download
+        if filename.endswith(".svg"):
+            media_type = "image/svg+xml"
+            download_name = f"diagram.svg"
+        else:  # .xml
+            media_type = "application/xml"
+            download_name = f"diagram.xml"
+
+        return FileResponse(
+            path=file_manager.temp_dir / filename,
+            media_type=media_type,
+            filename=download_name,
+        )
+
+    except FileOperationError as e:
+        logger.error("File export failed", filename=filename, error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ErrorResponse(
+                error="file_not_found",
+                message=f"File not found: {filename}",
+                details=str(e),
+            ).model_dump(),
+        ) from e
+
+    except Exception as e:
+        logger.error(
+            "Unexpected error during file export",
+            filename=filename,
+            error=str(e),
+            error_type=type(e).__name__,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=ErrorResponse(
+                error="export_failed",
+                message="Failed to export file",
+                details=str(e),
+            ).model_dump(),
+        ) from e

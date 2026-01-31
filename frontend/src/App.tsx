@@ -52,8 +52,8 @@ function App() {
         educational_level: '11-13', // Default to ages 11-13 (intermediate)
       });
 
-      // Create API URL for the image - assuming backend serves files at /api/export/{filename}
-      const imageUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/export/${response.png_filename}`;
+      // Convert SVG content to data URL for inline display
+      const imageUrl = `data:image/svg+xml;base64,${btoa(response.svg_content)}`;
 
       // Add bot response with diagram
       const botMsg: Message = {
@@ -63,13 +63,13 @@ function App() {
         timestamp: Date.now(),
         diagram: {
           image: imageUrl,
+          svg_content: response.svg_content,
           xml: response.xml_content,
           export_urls: {
-            png: `/api/export/${response.png_filename}`,
+            png: `/api/export/${response.svg_filename}`,
             svg: `/api/export/${response.svg_filename}`,
-            xml: `/api/export/${response.xml_content}`,
+            xml: `/api/export/${response.xml_filename}`,
           },
-          pngFilename: response.png_filename,
           svgFilename: response.svg_filename,
           metadata: {
             score: response.review_score,

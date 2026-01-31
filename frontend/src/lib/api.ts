@@ -35,8 +35,9 @@ export interface DiagramMetadata {
 }
 
 export interface DiagramResponse {
-  png_filename: string;
   svg_filename: string;
+  xml_filename: string;
+  svg_content: string;
   xml_content: string;
   plan: DiagramPlan;
   review_score: number;

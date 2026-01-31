@@ -31,14 +31,14 @@ class FileManager:
             max_file_size=self.max_file_size,
         )
 
-    async def save_file(self, content: bytes, file_format: str = "png") -> str:
+    async def save_file(self, content: bytes, file_format: str = "svg") -> str:
         """Save diagram file to temporary storage.
 
         Saves a file with automatic cleanup after TTL expires.
 
         Args:
             content: File content as bytes
-            file_format: File extension (png, svg, xml)
+            file_format: File extension (svg, xml)
 
         Returns:
             Filename (UUID with extension) for retrieval
@@ -47,9 +47,9 @@ class FileManager:
             FileOperationError: If file operations fail
         """
         # Validate file format
-        if file_format not in ["png", "svg", "xml"]:
+        if file_format not in ["svg", "xml"]:
             raise FileOperationError(
-                f"Invalid file format: {file_format}. Must be png, svg, or xml."
+                f"Invalid file format: {file_format}. Must be svg or xml."
             )
 
         # Validate file size

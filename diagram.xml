@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" modified="2024-01-01T00:00:00Z" agent="VisuaLearn" version="1.0">
+  <diagram name="Diagram">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="alice" value="Alice (Sender)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+  <mxGeometry x="40" y="50" width="100" height="50" as="geometry"/>
+</mxCell>
+<mxCell id="aliceKeyGen" value="Alice's Key Pair Generation" style="shape=process;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+  <mxGeometry x="40" y="150" width="100" height="50" as="geometry"/>
+</mxCell>
+<mxCell id="alicePubKey" value="Alice's Public Key" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ADD8E6;strokeColor=#6a8a8c;" vertex="1" parent="1">
+  <mxGeometry x="40" y="250" width="100" height="50" as="geometry"/>
+</mxCell>
+<mxCell id="alicePrivKey" value="Alice's Private Key" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFB6C1;strokeColor=#c44d5a;" vertex="1" parent="1">
+  <mxGeometry x="160" y="250" width="100" height="50" as="geometry"/>
+</mxCell>
+<mxCell id="bob" value="Bob (Receiver)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+  <mxGeometry x="660" y="50" width="100" height="50" as="geometry"/>
+</mxCell>
+<mxCell id="bobKeyGen" value="Bob's Key Pair Generation" style="shape=process;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+  <mxGeometry x="660" y="150" width="100" height="50" as="geometry"/>
+</mxCell>
+<mxCell id="bobPubKey" value="Bob's Public Key" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ADD8E6;strokeColor=#6a8a8c;" vertex="1" parent="1">
+  <mxGeometry x="540" y="250" width="100" height="50" as="geometry"/>
+</mxCell>
+<mxCell id="bobPrivKey" value="Bob's Private Key" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFB6C1;strokeColor=#c44d5a;" vertex="1" parent="1">
+  <mxGeometry x="660" y="250" width="100" height="50" as="geometry"/>
+</mxCell>
+<mxCell id="origMsg" value="Original Secret Message" style="shape=document;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+  <mxGeometry x="40" y="380" width="120" height="60" as="geometry"/>
+</mxCell>
+<mxCell id="encryption" value="Encryption Process" style="shape=process;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+  <mxGeometry x="250" y="380" width="120" height="60" as="geometry"/>
+</mxCell>
+<mxCell id="cipherText" value="Encrypted Message (Ciphertext)" style="shape=document;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+  <mxGeometry x="420" y="380" width="120" height="60" as="geometry"/>
+</mxCell>
+<mxCell id="decryption" value="Decryption Process" style="shape=process;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+  <mxGeometry x="590" y="380" width="120" height="60" as="geometry"/>
+</mxCell>
+<mxCell id="decryptedMsg" value="Decrypted Message" style="shape=document;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+  <mxGeometry x="730" y="380" width="120" height="60" as="geometry"/>
+</mxCell>
+<mxCell id="edge1" value="initiates" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="alice" target="aliceKeyGen">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+<mxCell id="edge2" value="creates" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="aliceKeyGen" target="alicePubKey">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+<mxCell id="edge3" value="creates" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.75;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="aliceKeyGen" target="alicePrivKey">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+<mxCell id="edge4" value="initiates" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="bob" target="bobKeyGen">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+<mxCell id="edge5" value="creates" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="bobKeyGen" target="bobPubKey">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+<mxCell id="edge6" value="creates" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.75;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="bobKeyGen" target="bobPrivKey">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+<mxCell id="edge7" value="shares publicly" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;curved=1;" edge="1" parent="1" source="bob" target="bobPubKey">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="710" y="120"/>
+      <mxPoint x="590" y="120"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="edge8" value="obtains for encryption" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="alice" target="bobPubKey">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="140" y="75"/>
+      <mxPoint x="500" y="75"/>
+      <mxPoint x="500" y="275"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="edge9" value="has" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="alice" target="origMsg">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="90" y="100"/>
+      <mxPoint x="90" y="350"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="edge10" value="is input to" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="origMsg" target="encryption">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+<mxCell id="edge11" value="uses Bob's Public Key for" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="alice" target="encryption">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="140" y="75"/>
+      <mxPoint x="200" y="75"/>
+      <mxPoint x="200" y="410"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="edge12" value="is used by" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=0.5;entryY=0;" edge="1" parent="1" source="bobPubKey" target="encryption">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="540" y="275"/>
+      <mxPoint x="300" y="275"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="edge13" value="produces" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="encryption" target="cipherText">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+<mxCell id="edge14" value="sends" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="alice" target="cipherText">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="140" y="75"/>
+      <mxPoint x="400" y="75"/>
+      <mxPoint x="400" y="410"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="edge15" value="receives" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="cipherText" target="bob">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="540" y="410"/>
+      <mxPoint x="560" y="410"/>
+      <mxPoint x="560" y="75"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="edge16" value="uses Bob's Private Key for" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="bob" target="decryption">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="710" y="100"/>
+      <mxPoint x="710" y="350"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="edge17" value="is input to" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="cipherText" target="decryption">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+<mxCell id="edge18" value="is used by" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" edge="1" parent="1" source="bobPrivKey" target="decryption">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="710" y="300"/>
+      <mxPoint x="710" y="350"/>
+      <mxPoint x="580" y="350"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="edge19" value="produces" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="decryption" target="decryptedMsg">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+<mxCell id="edge20" value="reads" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="bob" target="decryptedMsg">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="710" y="100"/>
+      <mxPoint x="710" y="350"/>
+      <mxPoint x="780" y="350"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="edge21" value="must keep secret" style="endArrow=none;startArrow=oval;dashed=1;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="alicePrivKey" target="alice">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="210" y="250"/>
+      <mxPoint x="210" y="120"/>
+      <mxPoint x="90" y="120"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="edge22" value="must keep secret" style="endArrow=none;startArrow=oval;dashed=1;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="bobPrivKey" target="bob">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="710" y="250"/>
+      <mxPoint x="710" y="120"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
