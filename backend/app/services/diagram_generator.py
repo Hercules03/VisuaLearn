@@ -199,7 +199,6 @@ class DiagramGenerator:
 
 **Concept**: {plan.concept}
 **Diagram Type**: {plan.diagram_type}
-**Educational Level**: {plan.educational_level}
 
 **MUST INCLUDE All These Components** ({len(plan.components)} total):
 {components_str}
@@ -221,6 +220,6 @@ REQUIREMENTS:
 5. Apply appropriate shapes and colors for visual clarity
 6. Return complete draw.io XML with proper structure
 
-Generate a clear, complete, pedagogically sound diagram for teaching students aged {plan.educational_level.split('-')[0]} years old."""
+Generate a clear, complete, pedagogically sound educational diagram."""
 
         return message

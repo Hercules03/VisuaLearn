@@ -1,6 +1,7 @@
 """Shared pytest fixtures and configuration."""
 
 import asyncio
+import json
 import os
 import sys
 from unittest.mock import AsyncMock, MagicMock
@@ -121,6 +122,56 @@ def mock_httpx_client(mock_drawio_xml):
     client.get = AsyncMock(return_value=response)
 
     return client
+
+
+@pytest.fixture
+def mock_mcp_process(mock_drawio_xml):
+    """Mock MCP subprocess process."""
+    process = MagicMock()
+    process.poll = MagicMock(return_value=None)  # Process is running
+
+    # Mock stdin
+    process.stdin = MagicMock()
+    process.stdin.write = MagicMock()
+    process.stdin.flush = MagicMock()
+
+    # Mock stdout readline to return MCP response
+    mcp_response = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": {
+            "xml": mock_drawio_xml
+        }
+    }
+    process.stdout = MagicMock()
+    process.stdout.readline = MagicMock(return_value=json.dumps(mcp_response) + "\n")
+
+    return process
+
+
+@pytest.fixture
+def mock_mcp_process_error(mock_drawio_xml):
+    """Mock MCP subprocess process that returns error."""
+    process = MagicMock()
+    process.poll = MagicMock(return_value=None)
+
+    process.stdin = MagicMock()
+    process.stdin.write = MagicMock()
+    process.stdin.flush = MagicMock()
+
+    # Mock error response
+    mcp_response = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "error": {
+            "code": -32603,
+            "message": "MCP tool execution failed"
+        }
+    }
+    process.stdout = MagicMock()
+    process.stdout.readline = MagicMock(return_value=json.dumps(mcp_response) + "\n")
+
+    return process
 
 
 @pytest.fixture(autouse=True)
