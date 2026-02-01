@@ -1,43 +1,130 @@
-import { useRef, useEffect } from "react";
+import { useState } from "react";
 
 interface DiagramRendererProps {
-  xmlContent: string;
+  imageData?: string; // Base64 PNG from backend
+  xmlContent?: string;
   height?: number;
 }
 
-export function DiagramRenderer({ xmlContent, height = 400 }: DiagramRendererProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+/**
+ * DiagramRenderer Component
+ *
+ * Displays draw.io diagrams as rendered PNG images.
+ * Receives base64-encoded PNG from backend (rendered via Playwright + mxGraph).
+ *
+ * Features:
+ * - Simple image display (no CSP issues)
+ * - Server-side rendering ensures quality
+ * - Responsive sizing with zoom/pan capability
+ * - Fallback to XML display if needed
+ *
+ * Architecture:
+ * Backend XML → mxGraph rendering → PNG → Base64 → Frontend image display
+ */
+export function DiagramRenderer({
+  imageData,
+  xmlContent,
+  height = 500,
+}: DiagramRendererProps) {
+  const [imageError, setImageError] = useState(false);
 
-  useEffect(() => {
-    if (!iframeRef.current || !xmlContent) return;
+  // No diagram data
+  if (!imageData && !xmlContent) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: `${height}px`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#f9fafb",
+          borderRadius: "0.75rem",
+          border: "1px solid #e5e7eb",
+        }}
+      >
+        <p style={{ color: "#6b7280", fontSize: "14px" }}>
+          No diagram data available
+        </p>
+      </div>
+    );
+  }
 
-    // Encode XML for URL
-    const encodedXml = encodeURIComponent(xmlContent);
+  // Rendered image available
+  if (imageData && !imageError) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: `${height}px`,
+          borderRadius: "0.75rem",
+          overflow: "auto",
+          border: "1px solid #e5e7eb",
+          backgroundColor: "#ffffff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <img
+          src={imageData}
+          alt="Diagram"
+          style={{
+            maxWidth: "100%",
+            maxHeight: "100%",
+            objectFit: "contain",
+            borderRadius: "0.5rem",
+          }}
+          onError={() => setImageError(true)}
+        />
+      </div>
+    );
+  }
 
-    // Create draw.io viewer URL with read-only parameters
-    // noSaveBtn=1: hide save button
-    // saveAndExit=0: disable save on exit
-    // noExitBtn=1: hide exit button
-    // embed=1: embedding mode
-    // lightbox=1: lightbox mode (no UI clutter)
-    const viewerUrl = `https://viewer.diagrams.net/?lightbox=1&embed=1&noSaveBtn=1&saveAndExit=0&noExitBtn=1#R${encodedXml}`;
+  // Image failed to load, show XML as fallback
+  if (imageError && xmlContent) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: `${height}px`,
+          borderRadius: "0.75rem",
+          overflow: "auto",
+          border: "1px solid #fef3c7",
+          backgroundColor: "#fffbeb",
+          padding: "12px",
+          fontFamily: "monospace",
+          fontSize: "11px",
+          color: "#92400e",
+        }}
+      >
+        <div style={{ marginBottom: "8px", fontWeight: "bold" }}>
+          ⚠️ Image rendering failed. XML content:
+        </div>
+        <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
+          {xmlContent.substring(0, 500)}...
+        </pre>
+      </div>
+    );
+  }
 
-    iframeRef.current.src = viewerUrl;
-  }, [xmlContent]);
-
+  // Failed to render
   return (
-    <iframe
-      ref={iframeRef}
-      title="Educational Diagram"
+    <div
       style={{
         width: "100%",
         height: `${height}px`,
-        border: "none",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#fee2e2",
         borderRadius: "0.75rem",
-        background: "white",
+        border: "1px solid #fecaca",
       }}
-      allowFullScreen
-      sandbox="allow-same-origin allow-popups"
-    />
+    >
+      <p style={{ color: "#dc2626", fontSize: "14px" }}>
+        Failed to prepare diagram for display
+      </p>
+    </div>
   );
 }

@@ -1,107 +1,158 @@
 """Image conversion service for draw.io diagrams.
 
-Converts draw.io XML diagrams for frontend display.
-Returns XML that will be rendered by the frontend (demo mode) or processed further.
+Converts draw.io XML diagrams to PNG format for frontend display.
 
 Architecture:
 1. Backend: Receives XML from diagram generator
-2. Validation: Validates XML structure
-3. Return: Returns XML string for display
-4. Frontend: Renders using available rendering engine
+2. Validation: Validates XML structure using lxml
+3. Rendering: Converts XML to PNG using Playwright + draw.io
+4. Encoding: Returns base64-encoded PNG for frontend display
+5. Frontend: Displays PNG image directly (no CSP issues)
 """
 
+import base64
+import asyncio
 from lxml import etree
 
 from loguru import logger
+from playwright.async_api import async_playwright
 
 from app.errors import RenderingError
 
 
 class ImageConverter:
-    """Service for validating and preparing draw.io XML diagrams."""
+    """Service for converting draw.io XML diagrams to PNG format."""
 
     def __init__(self):
         """Initialize image converter."""
+        self._playwright = None
+        self._browser = None
         logger.info("Image converter initialized")
 
-    async def to_svg(self, xml: str) -> str:
-        """Validate draw.io XML and return for frontend rendering.
+    async def _ensure_browser(self):
+        """Ensure Playwright browser is initialized."""
+        if self._browser is None:
+            try:
+                if self._playwright is None:
+                    self._playwright = await async_playwright().start()
+                self._browser = await self._playwright.chromium.launch()
+                logger.info("Playwright browser initialized")
+            except Exception as e:
+                logger.error(f"Failed to initialize Playwright: {e}")
+                raise RenderingError(f"Failed to initialize rendering engine: {str(e)}")
 
-        For now, returns XML as-is (frontend will handle rendering).
-        In production, this would render to SVG/PNG via Playwright or similar.
+    async def to_svg(self, xml: str) -> str:
+        """Render draw.io XML to base64-encoded PNG.
+
+        Validates XML structure, then uses Playwright to render to PNG via
+        the draw.io rendering engine embedded in an HTML page.
 
         Args:
             xml: draw.io XML diagram content
 
         Returns:
-            XML content string for frontend rendering
+            Base64-encoded PNG image as data URL for frontend display
 
         Raises:
-            RenderingError: If XML is invalid
+            RenderingError: If XML is invalid or rendering fails
         """
-        logger.info("Validating diagram XML", xml_length=len(xml))
+        logger.info("Converting diagram to PNG", xml_length=len(xml))
 
         try:
             # 1. Validate XML structure
             if not xml or not xml.strip():
                 raise RenderingError("Empty XML provided")
 
-            # 2. Parse XML to validate syntax
+            # 2. Parse and validate XML
             try:
                 root = etree.fromstring(xml.encode("utf-8"))
             except etree.XMLSyntaxError as e:
                 raise RenderingError(f"Invalid XML syntax: {str(e)}")
 
-            # 3. Validate draw.io structure
-            # Check root element is <mxfile> (handle namespaces)
+            # Validate draw.io structure
             tag_name = root.tag.split("}")[-1] if "}" in root.tag else root.tag
             if tag_name != "mxfile":
                 raise RenderingError(f"Expected <mxfile> root element, got <{tag_name}>")
 
-            # Check for required <diagram> element (use wildcard for namespace)
-            diagram = root.find("{*}diagram")
+            diagram = root.find("{*}diagram") or root.find("diagram")
             if diagram is None:
-                diagram = root.find("diagram")
-            if diagram is None:
-                raise RenderingError("Missing <diagram> element in draw.io XML")
+                raise RenderingError("Missing <diagram> element")
 
-            # Check for required <mxGraphModel> element (use wildcard for namespace)
-            model = diagram.find("{*}mxGraphModel")
+            model = diagram.find("{*}mxGraphModel") or diagram.find("mxGraphModel")
             if model is None:
-                model = diagram.find("mxGraphModel")
-            if model is None:
-                raise RenderingError("Missing <mxGraphModel> element in diagram")
+                raise RenderingError("Missing <mxGraphModel> element")
 
-            # Check for <root> cell container (use wildcard for namespace)
-            cells_root = model.find("{*}root")
+            cells_root = model.find("{*}root") or model.find("root")
             if cells_root is None:
-                cells_root = model.find("root")
-            if cells_root is None:
-                raise RenderingError("Missing diagram cells (<root> element not found)")
+                raise RenderingError("Missing diagram cells (<root> element)")
 
-            # Count cells in the diagram (handle namespaces)
-            cells = cells_root.findall("{*}mxCell")
-            if not cells:
-                cells = cells_root.findall("mxCell")
-            cell_count = len(cells)
-            if cell_count < 2:
-                raise RenderingError(
-                    f"Diagram has insufficient cells: {cell_count} (minimum 2 required)"
-                )
+            cells = cells_root.findall("{*}mxCell") or cells_root.findall("mxCell")
+            if len(cells) < 2:
+                raise RenderingError(f"Diagram has insufficient cells: {len(cells)} (minimum 2)")
 
-            logger.info(
-                "XML structure validated",
-                cells=cell_count,
-                vertices=[c for c in cells if c.get("vertex") == "1"],
-                edges=[c for c in cells if c.get("edge") == "1"],
-            )
+            logger.info("XML structure validated", cells=len(cells))
 
-            # For demo: return XML as-is
-            # In production: would render to SVG via Playwright or draw.io API
-            return xml
+            # 3. Render XML to PNG using Playwright
+            await self._ensure_browser()
+
+            # Create HTML page that renders the diagram
+            html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Diagram Render</title>
+    <script src="https://cdn.jsdelivr.net/npm/mxgraph@4.2.2/javascript/mxClient.min.js"></script>
+    <style>
+        body {{ margin: 0; padding: 0; }}
+        #diagram {{ width: 100%; height: 100%; }}
+    </style>
+</head>
+<body>
+    <div id="diagram"></div>
+    <script>
+        // Decode and render the diagram
+        var xml = decodeURIComponent('{self._encode_xml_for_js(xml)}');
+        var container = document.getElementById('diagram');
+        var graph = new mxGraph(container);
+        var codec = new mxCodec();
+        var node = mxUtils.parseXml(xml).documentElement;
+        codec.decode(node, graph.getModel());
+        graph.fit();
+
+        // Adjust canvas size to fit content
+        var bounds = graph.getGraphBounds();
+        container.style.width = Math.ceil(bounds.width + 20) + 'px';
+        container.style.height = Math.ceil(bounds.height + 20) + 'px';
+    </script>
+</body>
+</html>"""
+
+            page = await self._browser.new_page()
+            try:
+                await page.set_content(html)
+                await asyncio.sleep(2)  # Wait for rendering
+
+                # Take screenshot
+                screenshot = await page.screenshot(type="png")
+                base64_png = base64.b64encode(screenshot).decode("utf-8")
+
+                logger.info("Diagram rendered to PNG", size_bytes=len(screenshot))
+                return f"data:image/png;base64,{base64_png}"
+
+            finally:
+                await page.close()
 
         except RenderingError:
             raise
         except Exception as e:
-            logger.error(f"XML validation failed: {e}", exc_info=True)
-            raise RenderingError(f"Failed to validate diagram: {str(e)}")
+            logger.error(f"Rendering failed: {e}", exc_info=True)
+            raise RenderingError(f"Failed to render diagram: {str(e)}")
+
+    @staticmethod
+    def _encode_xml_for_js(xml: str) -> str:
+        """Encode XML for safe inclusion in JavaScript string."""
+        # Replace special characters for JavaScript string literal
+        encoded = xml.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n")
+        # URL encode for safe transmission
+        import urllib.parse
+        return urllib.parse.quote(encoded)
