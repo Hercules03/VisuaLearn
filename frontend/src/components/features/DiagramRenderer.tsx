@@ -81,8 +81,8 @@ export function DiagramRenderer({
     );
   }
 
-  // Image failed to load, show XML as fallback
-  if (imageError && xmlContent) {
+  // No image data but have XML - show as preview (demo mode or failed rendering)
+  if (xmlContent && (!imageData || imageError)) {
     return (
       <div
         style={{
@@ -90,25 +90,26 @@ export function DiagramRenderer({
           height: `${height}px`,
           borderRadius: "0.75rem",
           overflow: "auto",
-          border: "1px solid #fef3c7",
-          backgroundColor: "#fffbeb",
+          border: "1px solid #dbeafe",
+          backgroundColor: "#f0f9ff",
           padding: "12px",
           fontFamily: "monospace",
           fontSize: "11px",
-          color: "#92400e",
+          color: "#1e40af",
         }}
       >
         <div style={{ marginBottom: "8px", fontWeight: "bold" }}>
-          ⚠️ Image rendering failed. XML content:
+          📋 Diagram XML Preview:
         </div>
         <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
-          {xmlContent.substring(0, 500)}...
+          {xmlContent.substring(0, 800)}
+          {xmlContent.length > 800 ? "...\n(truncated)" : ""}
         </pre>
       </div>
     );
   }
 
-  // Failed to render
+  // Failed to render - no image or XML available
   return (
     <div
       style={{
