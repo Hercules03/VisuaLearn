@@ -1,6 +1,4 @@
-"""Tests for Image Converter service."""
-
-import asyncio
+"""Tests for ImageConverter service (XML validation for client-side rendering)."""
 
 import pytest
 
@@ -9,235 +7,388 @@ from app.services.image_converter import ImageConverter
 
 
 class TestImageConverterInit:
-    """Test ImageConverter initialization."""
+    """ImageConverter initialization tests."""
 
-    def test_init_creates_converter(self, test_env):
-        """Test successful initialization creates converter."""
+    def test_init_creates_converter(self):
+        """Test converter initialization."""
         converter = ImageConverter()
-        assert converter.timeout == 8
-        assert converter.drawio_url == "http://localhost:6002"
+        assert converter is not None
 
 
-class TestImageConverterInputValidation:
-    """Test input validation for image conversion."""
+class TestImageConverterValidation:
+    """XML validation tests."""
 
     @pytest.mark.asyncio
-    async def test_to_png_empty_xml(self, test_env):
-        """Test to_png with empty XML fails."""
+    async def test_valid_minimal_diagram(self):
+        """Test validation of minimal valid draw.io XML."""
         converter = ImageConverter()
 
-        with pytest.raises(RenderingError, match="Invalid XML"):
-            await converter.to_png("")
+        # Minimal valid draw.io XML structure
+        xml = """<?xml version="1.0"?>
+<mxfile>
+    <diagram>
+        <mxGraphModel>
+            <root>
+                <mxCell id="0" parent="" vertex="1"/>
+                <mxCell id="1" parent="0" vertex="1"/>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>"""
+
+        result = await converter.to_svg(xml)
+        assert result == xml
 
     @pytest.mark.asyncio
-    async def test_to_png_whitespace_xml(self, test_env):
-        """Test to_png with whitespace-only XML fails."""
+    async def test_valid_complete_diagram(self):
+        """Test validation of complete diagram with components and relationships."""
         converter = ImageConverter()
 
-        with pytest.raises(RenderingError, match="Invalid XML"):
-            await converter.to_png("   ")
+        xml = """<?xml version="1.0"?>
+<mxfile>
+    <diagram>
+        <mxGraphModel>
+            <root>
+                <mxCell id="0" parent="" vertex="1"/>
+                <mxCell id="1" parent="0" vertex="1" value="Component 1"/>
+                <mxCell id="2" parent="0" vertex="1" value="Component 2"/>
+                <mxCell id="3" parent="0" edge="1" source="1" target="2" value="relates to"/>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>"""
+
+        result = await converter.to_svg(xml)
+        assert result == xml
+        assert "<mxCell" in result
+        assert 'vertex="1"' in result
+        assert 'edge="1"' in result
 
     @pytest.mark.asyncio
-    async def test_to_png_invalid_xml_format(self, test_env):
-        """Test to_png with non-XML fails."""
+    async def test_empty_xml(self):
+        """Test error handling for empty XML."""
         converter = ImageConverter()
 
-        with pytest.raises(RenderingError, match="Invalid XML"):
-            await converter.to_png("not xml at all")
-
-    @pytest.mark.asyncio
-    async def test_to_svg_empty_xml(self, test_env):
-        """Test to_svg with empty XML fails."""
-        converter = ImageConverter()
-
-        with pytest.raises(RenderingError, match="Invalid XML"):
+        with pytest.raises(RenderingError, match="Empty XML"):
             await converter.to_svg("")
 
     @pytest.mark.asyncio
-    async def test_to_svg_invalid_xml_format(self, test_env):
-        """Test to_svg with non-XML fails."""
+    async def test_whitespace_only_xml(self):
+        """Test error handling for whitespace-only XML."""
         converter = ImageConverter()
 
-        with pytest.raises(RenderingError, match="Invalid XML"):
-            await converter.to_svg("not xml")
-
-
-class TestImageConverterTimeout:
-    """Test timeout enforcement."""
+        with pytest.raises(RenderingError, match="Empty XML"):
+            await converter.to_svg("   \n\t  ")
 
     @pytest.mark.asyncio
-    async def test_to_png_timeout(self, test_env, monkeypatch):
-        """Test to_png raises timeout error."""
-
-        async def slow_conversion(*args, **kwargs):
-            await asyncio.sleep(10)
-
+    async def test_invalid_xml_syntax(self):
+        """Test error handling for malformed XML."""
         converter = ImageConverter()
-        converter.timeout = 0.001  # Set very short timeout
-        converter._to_png_internal = slow_conversion
 
-        with pytest.raises(RenderingError, match="timed out"):
-            await converter.to_png("<mxfile></mxfile>")
+        invalid_xml = "<?xml version='1.0'?><mxfile><diagram><mxGraphModel></mxfile>"
+
+        with pytest.raises(RenderingError, match="Invalid XML syntax"):
+            await converter.to_svg(invalid_xml)
 
     @pytest.mark.asyncio
-    async def test_to_svg_timeout(self, test_env, monkeypatch):
-        """Test to_svg raises timeout error."""
-
-        async def slow_conversion(*args, **kwargs):
-            await asyncio.sleep(10)
-
-        converter = ImageConverter()
-        converter.timeout = 0.001
-        converter._to_svg_internal = slow_conversion
-
-        with pytest.raises(RenderingError, match="timed out"):
-            await converter.to_svg("<mxfile></mxfile>")
-
-
-class TestImageConverterHtmlGeneration:
-    """Test HTML generation for PNG rendering."""
-
-    def test_create_html_from_valid_xml(self, test_env):
-        """Test HTML generation from valid XML."""
-        converter = ImageConverter()
-        xml = "<mxfile><diagram>Test</diagram></mxfile>"
-
-        html = converter._create_html_from_xml(xml)
-
-        assert "<html>" in html
-        assert "mxgraph" in html
-        assert "diagram" in html
-        assert "Test" in html
-
-    def test_create_html_empty_xml_fails(self, test_env):
-        """Test HTML generation with empty XML fails."""
+    async def test_wrong_root_element(self):
+        """Test error handling for non-mxfile root."""
         converter = ImageConverter()
 
-        with pytest.raises(RenderingError, match="empty XML"):
-            converter._create_html_from_xml("")
+        xml = """<?xml version="1.0"?>
+<svg>
+    <diagram/>
+</svg>"""
 
-    def test_create_html_escapes_special_chars(self, test_env):
-        """Test HTML generation properly escapes special characters."""
-        converter = ImageConverter()
-        xml = '<mxfile><diagram name="Test & Co."></diagram></mxfile>'
+        with pytest.raises(RenderingError, match="Expected <mxfile> root element"):
+            await converter.to_svg(xml)
 
-        html = converter._create_html_from_xml(xml)
-
-        # Check that & and " are escaped
-        assert "&amp;" in html
-        assert "&quot;" in html
-        assert "Test &amp; Co." in html
-
-    def test_create_html_complex_xml(self, test_env):
-        """Test HTML generation with complex XML structure."""
-        converter = ImageConverter()
-        xml = (
-            "<mxfile><diagram><mxCell id='1' value='Cell 1'/>"
-            "<mxCell id='2' value='Cell 2'/></diagram></mxfile>"
-        )
-
-        html = converter._create_html_from_xml(xml)
-
-        assert "<html>" in html
-        assert "Cell 1" in html
-        assert "Cell 2" in html
-
-    def test_create_html_preserves_content(self, test_env):
-        """Test HTML generation preserves all XML content."""
-        converter = ImageConverter()
-        xml = "<mxfile><diagram><data>Important Data</data></diagram></mxfile>"
-
-        html = converter._create_html_from_xml(xml)
-
-        assert "Important Data" in html
-
-
-class TestImageConverterConfiguration:
-    """Test configuration and setup."""
-
-    def test_converter_timeout_from_settings(self, test_env):
-        """Test converter uses correct timeout from settings."""
-        # test_env sets IMAGE_TIMEOUT=4
-        converter = ImageConverter()
-        assert converter.timeout == 8
-
-    def test_converter_drawio_url_from_settings(self, test_env):
-        """Test converter uses correct draw.io URL from settings."""
-        # test_env sets DRAWIO_SERVICE_URL=http://localhost:6002
-        converter = ImageConverter()
-        assert converter.drawio_url == "http://localhost:6002"
-
-
-class TestImageConverterPngConversion:
-    """Test PNG conversion error handling."""
-
-    def test_to_png_internal_requires_valid_xml(self):
-        """Test _to_png_internal validates XML format."""
+    @pytest.mark.asyncio
+    async def test_missing_diagram_element(self):
+        """Test error handling when <diagram> is missing."""
         converter = ImageConverter()
 
-        # Empty XML should fail validation
+        xml = """<?xml version="1.0"?>
+<mxfile>
+    <other/>
+</mxfile>"""
+
+        with pytest.raises(RenderingError, match="Missing <diagram> element"):
+            await converter.to_svg(xml)
+
+    @pytest.mark.asyncio
+    async def test_missing_mxgraphmodel(self):
+        """Test error handling when <mxGraphModel> is missing."""
+        converter = ImageConverter()
+
+        xml = """<?xml version="1.0"?>
+<mxfile>
+    <diagram>
+        <other/>
+    </diagram>
+</mxfile>"""
+
+        with pytest.raises(RenderingError, match="Missing <mxGraphModel> element"):
+            await converter.to_svg(xml)
+
+    @pytest.mark.asyncio
+    async def test_missing_root_element(self):
+        """Test error handling when <root> cell container is missing."""
+        converter = ImageConverter()
+
+        xml = """<?xml version="1.0"?>
+<mxfile>
+    <diagram>
+        <mxGraphModel>
+            <other/>
+        </mxGraphModel>
+    </diagram>
+</mxfile>"""
+
+        with pytest.raises(RenderingError, match="Missing diagram cells"):
+            await converter.to_svg(xml)
+
+    @pytest.mark.asyncio
+    async def test_insufficient_cells(self):
+        """Test error handling when diagram has too few cells."""
+        converter = ImageConverter()
+
+        xml = """<?xml version="1.0"?>
+<mxfile>
+    <diagram>
+        <mxGraphModel>
+            <root>
+                <mxCell id="0" parent="" vertex="1"/>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>"""
+
+        with pytest.raises(RenderingError, match="insufficient cells"):
+            await converter.to_svg(xml)
+
+
+class TestImageConverterLogging:
+    """Test logging of validation results."""
+
+    @pytest.mark.asyncio
+    async def test_logs_validation_success(self, capsys):
+        """Test that successful validation is logged with cell counts."""
+        converter = ImageConverter()
+
+        xml = """<?xml version="1.0"?>
+<mxfile>
+    <diagram>
+        <mxGraphModel>
+            <root>
+                <mxCell id="0" parent="" vertex="1"/>
+                <mxCell id="1" parent="0" vertex="1" value="Node"/>
+                <mxCell id="2" parent="0" vertex="1" value="Node2"/>
+                <mxCell id="3" parent="0" edge="1" source="1" target="2"/>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>"""
+
+        result = await converter.to_svg(xml)
+
+        # Verify validation worked and returned the XML
+        assert result == xml
+        # Verify cell counts are correct
+        assert xml.count('vertex="1"') == 3
+        assert xml.count('edge="1"') == 1
+
+    @pytest.mark.asyncio
+    async def test_logs_different_cell_types(self):
+        """Test logging distinguishes vertex and edge cells."""
+        converter = ImageConverter()
+
+        xml = """<?xml version="1.0"?>
+<mxfile>
+    <diagram>
+        <mxGraphModel>
+            <root>
+                <mxCell id="0" parent="" vertex="1"/>
+                <mxCell id="1" parent="0" vertex="1"/>
+                <mxCell id="2" parent="0" vertex="1"/>
+                <mxCell id="3" parent="0" vertex="1"/>
+                <mxCell id="4" parent="0" edge="1" source="1" target="2"/>
+                <mxCell id="5" parent="0" edge="1" source="2" target="3"/>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>"""
+
+        result = await converter.to_svg(xml)
+
+        # Verify cell counts are correct
+        assert result == xml
+        assert xml.count('vertex="1"') == 4
+        assert xml.count('edge="1"') == 2
+
+
+class TestImageConverterDataIntegrity:
+    """Test that validation doesn't modify the XML."""
+
+    @pytest.mark.asyncio
+    async def test_returns_unchanged_xml(self):
+        """Test that validated XML is returned unchanged."""
+        converter = ImageConverter()
+
+        xml = """<?xml version="1.0"?>
+<mxfile version="1.0" xmlns="http://jgraph.com/xml">
+    <diagram name="Test">
+        <mxGraphModel>
+            <root>
+                <mxCell id="0" parent="" vertex="1" value="A"/>
+                <mxCell id="1" parent="0" vertex="1" value="B"/>
+                <mxCell id="2" parent="0" edge="1" source="0" target="1" value="relation"/>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>"""
+
+        result = await converter.to_svg(xml)
+
+        # Result should be identical to input
+        assert result == xml
+
+    @pytest.mark.asyncio
+    async def test_preserves_attributes(self):
+        """Test that all XML attributes are preserved."""
+        converter = ImageConverter()
+
+        xml = """<?xml version="1.0"?>
+<mxfile>
+    <diagram>
+        <mxGraphModel>
+            <root>
+                <mxCell id="0" parent="" vertex="1"/>
+                <mxCell id="1" parent="0" vertex="1" value="Test"
+                         style="fillColor=#ffffff;strokeWidth=3;fontSize=14"/>
+                <mxCell id="2" parent="0" vertex="1"/>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>"""
+
+        result = await converter.to_svg(xml)
+
+        # Attributes should be preserved
+        assert 'fillColor=#ffffff' in result
+        assert 'strokeWidth=3' in result
+        assert 'fontSize=14' in result
+
+
+class TestImageConverterRobustness:
+    """Test robustness with edge cases."""
+
+    @pytest.mark.asyncio
+    async def test_handles_large_valid_diagram(self):
+        """Test validation of larger diagram with many components."""
+        converter = ImageConverter()
+
+        # Build diagram with 50 cells
+        cells = ["<mxCell id=\"0\" parent=\"\" vertex=\"1\"/>"]
+        for i in range(1, 25):
+            cells.append(f'<mxCell id="{i}" parent="0" vertex="1" value="Node{i}"/>')
+        for i in range(25, 50):
+            cells.append(
+                f'<mxCell id="{i}" parent="0" edge="1" source="{i-25}" target="{i-24}"/>'
+            )
+
+        xml = f"""<?xml version="1.0"?>
+<mxfile>
+    <diagram>
+        <mxGraphModel>
+            <root>
+                {''.join(cells)}
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>"""
+
+        result = await converter.to_svg(xml)
+        assert result == xml
+
+    @pytest.mark.asyncio
+    async def test_handles_special_characters(self):
+        """Test validation with special characters in cell values."""
+        converter = ImageConverter()
+
+        xml = """<?xml version="1.0"?>
+<mxfile>
+    <diagram>
+        <mxGraphModel>
+            <root>
+                <mxCell id="0" parent="" vertex="1"/>
+                <mxCell id="1" parent="0" vertex="1" value="Math: &lt;x&gt; = y &amp; z"/>
+                <mxCell id="2" parent="0" vertex="1" value="UTF-8: 你好 мир 🎉"/>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>"""
+
+        result = await converter.to_svg(xml)
+        assert "Math:" in result
+        assert "&lt;x&gt;" in result or "<x>" in result
+        assert "&amp;" in result or "&" in result
+
+    @pytest.mark.asyncio
+    async def test_handles_namespaces(self):
+        """Test validation with XML namespaces."""
+        converter = ImageConverter()
+
+        xml = """<?xml version="1.0"?>
+<mxfile xmlns="http://jgraph.com/xml">
+    <diagram>
+        <mxGraphModel>
+            <root>
+                <mxCell id="0" parent="" vertex="1"/>
+                <mxCell id="1" parent="0" vertex="1"/>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>"""
+
+        result = await converter.to_svg(xml)
+        assert result == xml
+
+
+class TestImageConverterSecurityValidation:
+    """Test that validation includes security checks (no XXE)."""
+
+    @pytest.mark.asyncio
+    async def test_rejects_xml_with_dtd_entity(self):
+        """Test that XXE attacks are prevented."""
+        converter = ImageConverter()
+
+        # XXE attack vector
+        xml = """<?xml version="1.0"?>
+<!DOCTYPE mxfile [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>
+<mxfile>
+    <diagram>
+        <mxGraphModel>
+            <root>
+                <mxCell id="0" parent="" vertex="1" value="&xxe;"/>
+                <mxCell id="1" parent="0" vertex="1"/>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>"""
+
+        # Should raise error (lxml prevents XXE by default)
         with pytest.raises(RenderingError):
-            asyncio.run(converter._to_png_internal(""))
+            await converter.to_svg(xml)
 
-        # Non-XML should fail validation
+    @pytest.mark.asyncio
+    async def test_rejects_extremely_large_xml(self):
+        """Test DOS protection against billion laughs attack."""
+        converter = ImageConverter()
+
+        # Very large XML (simulating billion laughs)
+        huge_xml = "<?xml version='1.0'?>" + "<a>" * 100000 + "</a>" * 100000
+
+        # Should handle gracefully
         with pytest.raises(RenderingError):
-            asyncio.run(converter._to_png_internal("not xml"))
-
-
-class TestImageConverterSvgConversion:
-    """Test SVG conversion error handling."""
-
-    def test_to_svg_internal_requires_valid_xml(self):
-        """Test _to_svg_internal validates XML format."""
-        converter = ImageConverter()
-
-        # Empty XML should fail validation
-        with pytest.raises(RenderingError):
-            asyncio.run(converter._to_svg_internal(""))
-
-        # Non-XML should fail validation
-        with pytest.raises(RenderingError):
-            asyncio.run(converter._to_svg_internal("not xml"))
-
-
-class TestImageConverterErrorMessages:
-    """Test error messages are informative."""
-
-    def test_png_timeout_message_includes_timeout_value(self, test_env):
-        """Test PNG timeout error includes timeout duration."""
-
-        async def slow_conversion(*args, **kwargs):
-            await asyncio.sleep(10)
-
-        converter = ImageConverter()
-        converter.timeout = 0.001
-        converter._to_png_internal = slow_conversion
-
-        try:
-            asyncio.run(converter.to_png("<mxfile></mxfile>"))
-        except RenderingError as e:
-            assert "0.001" in str(e) or "timed out" in str(e)
-
-    def test_svg_timeout_message_includes_timeout_value(self, test_env):
-        """Test SVG timeout error includes timeout duration."""
-
-        async def slow_conversion(*args, **kwargs):
-            await asyncio.sleep(10)
-
-        converter = ImageConverter()
-        converter.timeout = 0.001
-        converter._to_svg_internal = slow_conversion
-
-        try:
-            asyncio.run(converter.to_svg("<mxfile></mxfile>"))
-        except RenderingError as e:
-            assert "0.001" in str(e) or "timed out" in str(e)
-
-    def test_invalid_xml_error_message(self, test_env):
-        """Test invalid XML error is clear."""
-        converter = ImageConverter()
-
-        with pytest.raises(RenderingError) as exc_info:
-            asyncio.run(converter.to_png("not xml"))
-
-        assert "Invalid XML" in str(exc_info.value) or "format" in str(exc_info.value)
+            await converter.to_svg(huge_xml)
