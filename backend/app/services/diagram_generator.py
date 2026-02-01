@@ -1,9 +1,11 @@
-"""Diagram Generator service for creating draw.io XML diagrams."""
+"""Diagram Generator service for creating draw.io XML diagrams via MCP."""
 
 import asyncio
 import json
+import subprocess
+import sys
+from typing import Optional
 
-import httpx
 from loguru import logger
 
 from app.config import settings
@@ -12,18 +14,44 @@ from app.services.planning_agent import PlanningOutput
 
 
 class DiagramGenerator:
-    """AI service for generating draw.io XML diagrams via next-ai-draw-io."""
+    """AI service for generating draw.io XML diagrams via MCP protocol."""
 
     def __init__(self):
-        """Initialize diagram generator with service configuration."""
+        """Initialize diagram generator with MCP service."""
         self.timeout = settings.generation_timeout
-        self.drawio_url = settings.drawio_service_url
+        self.mcp_process: Optional[subprocess.Popen] = None
+        self._message_id = 0
+        logger.info("Diagram generator initialized (MCP mode)")
+
+    def _get_next_message_id(self) -> int:
+        """Get next message ID for MCP requests."""
+        self._message_id += 1
+        return self._message_id
+
+    def _ensure_mcp_server(self):
+        """Ensure MCP server process is running."""
+        if self.mcp_process is None or self.mcp_process.poll() is not None:
+            logger.info("Starting MCP server subprocess")
+            try:
+                self.mcp_process = subprocess.Popen(
+                    [sys.executable, "-m", "pip", "run", "npx", "@next-ai-drawio/mcp-server@latest"],
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    bufsize=1,  # Line buffered
+                )
+                logger.info("MCP server started", pid=self.mcp_process.pid)
+            except FileNotFoundError as e:
+                logger.error("Cannot start MCP server - npx not found")
+                raise GenerationError(
+                    "MCP server unavailable. Install with: npm install -g @next-ai-drawio/mcp-server"
+                ) from e
 
     async def generate(self, plan: PlanningOutput) -> str:
         """Generate diagram XML from planning specifications.
 
-        Creates a draw.io format XML diagram based on the provided planning
-        output using the next-ai-draw-io chat API with streaming.
+        Creates a draw.io format XML diagram using MCP protocol from next-ai-draw-io.
 
         Args:
             plan: PlanningOutput with diagram specifications
@@ -44,31 +72,29 @@ class DiagramGenerator:
         try:
             # Run generation with timeout
             xml = await asyncio.wait_for(
-                self._generate_internal(plan),
+                self._generate_via_mcp(plan),
                 timeout=self.timeout,
             )
             logger.info(
                 "Diagram generation completed",
                 xml_length=len(xml),
                 concept=plan.concept,
+                mxcell_count=xml.count("<mxCell"),
             )
             return xml
         except asyncio.TimeoutError:
             logger.error(f"Diagram generation timed out after {self.timeout}s")
             raise GenerationError(
-                f"Diagram generation timed out after {self.timeout}s."
+                f"Diagram generation timed out after {self.timeout}s"
             )
         except GenerationError:
-            # Re-raise GenerationErrors as-is
             raise
         except Exception as e:
-            logger.error(f"Diagram generation failed: {e}")
+            logger.error(f"Diagram generation failed: {e}", exc_info=True)
             raise GenerationError(f"Failed to generate diagram: {str(e)}")
 
-    async def _generate_internal(self, plan: PlanningOutput) -> str:
-        """Internal generation implementation via next-ai-draw-io chat API.
-
-        Calls the streaming /api/chat endpoint and extracts XML from response.
+    async def _generate_via_mcp(self, plan: PlanningOutput) -> str:
+        """Generate diagram using MCP tool call.
 
         Args:
             plan: PlanningOutput with diagram specifications
@@ -77,93 +103,94 @@ class DiagramGenerator:
             draw.io XML string
 
         Raises:
-            GenerationError: If generation fails
+            GenerationError: If MCP generation fails
         """
+        # Ensure MCP server is running
+        self._ensure_mcp_server()
+
         # Create user message from planning output
         user_message = self._create_user_message(plan)
 
-        # Prepare request payload for next-ai-draw-io chat API
-        payload = {
-            "messages": [
-                {
-                    "role": "user",
-                    "parts": [{"type": "text", "text": user_message}],
-                }
-            ],
-            "xml": "",  # Empty initial XML
-            "previousXml": "",  # No previous diagram
+        # Build MCP request
+        msg_id = self._get_next_message_id()
+        mcp_request = {
+            "jsonrpc": "2.0",
+            "id": msg_id,
+            "method": "tools/call",
+            "params": {
+                "name": "create_new_diagram",
+                "arguments": {
+                    "xml": user_message,
+                    "title": plan.concept,
+                },
+            },
         }
 
-        logger.debug(f"Sending request to {self.drawio_url}/api/chat")
+        logger.debug("Sending MCP tool call", method="create_new_diagram", msg_id=msg_id)
 
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.post(
-                    f"{self.drawio_url}/api/chat",
-                    json=payload,
-                )
+            # Send request to MCP server
+            request_str = json.dumps(mcp_request)
+            self.mcp_process.stdin.write(request_str + "\n")
+            self.mcp_process.stdin.flush()
 
-                if response.status_code != 200:
-                    logger.error(
-                        f"Draw.io service error: {response.status_code}",
-                        response_text=response.text[:500],
-                    )
-                    raise GenerationError(
-                        f"Draw.io service returned {response.status_code}: {response.text[:200]}"
-                    )
+            # Read response with timeout
+            loop = asyncio.get_event_loop()
+            response_str = await asyncio.wait_for(
+                loop.run_in_executor(None, self.mcp_process.stdout.readline),
+                timeout=self.timeout,
+            )
 
-                # Parse streaming response to extract XML
-                logger.debug(
-                    "Raw response received",
-                    response_length=len(response.text),
-                    lines_count=len(response.text.split('\n')),
-                )
-                xml = await self._extract_xml_from_stream(response.text)
-                logger.debug(
-                    "XML extraction result",
-                    xml_length=len(xml) if xml else 0,
-                    xml_cells=xml.count("<mxCell") if xml else 0,
-                )
-                if not xml:
-                    logger.error(
-                        "No XML content found in draw.io response",
-                        response_preview=response.text[:1000],
-                    )
-                    raise GenerationError(
-                        "Failed to extract diagram from draw.io response"
-                    )
+            if not response_str:
+                logger.error("MCP server closed unexpectedly")
+                self.mcp_process = None  # Reset for next attempt
+                raise GenerationError("MCP server connection lost")
 
-                logger.debug(f"Generated XML length: {len(xml)}")
-                return xml
+            response = json.loads(response_str)
+
+            # Check for errors in response
+            if "error" in response:
+                error_msg = response["error"].get("message", "Unknown MCP error")
+                logger.error(f"MCP error: {error_msg}")
+                raise GenerationError(f"MCP diagram generation failed: {error_msg}")
+
+            # Extract XML from result
+            result = response.get("result", {})
+            xml = result.get("xml")
+
+            if not xml:
+                logger.error("MCP tool returned no XML", result=result)
+                raise GenerationError("MCP tool returned empty diagram")
+
+            logger.debug("MCP diagram generated", xml_length=len(xml))
+            return xml
 
         except asyncio.TimeoutError:
-            logger.error(f"Diagram generation timed out after {self.timeout}s")
-            raise GenerationError(
-                f"Diagram generation timed out after {self.timeout}s"
-            )
-        except httpx.ConnectError as e:
-            logger.error(f"Cannot connect to diagram service at {self.drawio_url}: {e}")
-            raise GenerationError(
-                f"Cannot connect to diagram service. Is it running at {self.drawio_url}?"
-            )
-        except GenerationError:
-            raise
+            logger.error(f"MCP request timed out after {self.timeout}s")
+            raise GenerationError(f"Diagram generation timed out after {self.timeout}s")
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse MCP response: {e}")
+            raise GenerationError(f"Invalid MCP response format: {e}")
+        except (BrokenPipeError, OSError) as e:
+            logger.error(f"MCP server connection lost: {e}")
+            self.mcp_process = None  # Reset for next attempt
+            raise GenerationError(f"MCP server connection failed: {e}")
         except Exception as e:
-            logger.error(f"Diagram generation failed: {e}")
-            raise GenerationError(f"Failed to generate diagram: {str(e)}")
+            logger.error(f"MCP generation error: {e}", exc_info=True)
+            raise GenerationError(f"MCP diagram generation failed: {str(e)}")
 
     def _create_user_message(self, plan: PlanningOutput) -> str:
-        """Create a structured prompt from planning output.
+        """Create a structured prompt from planning output for MCP tool.
 
         Args:
             plan: PlanningOutput with diagram specifications
 
         Returns:
-            Formatted user message for the chat API
+            Formatted prompt for the MCP create_new_diagram tool
         """
         components_str = "\n".join(f"  - {c}" for c in plan.components)
         relationships_str = "\n".join(
-            f"  - {r['from']} → {r['to']}: {r['label']}" for r in plan.relationships
+            f"  - {r['from']} → {r['to']}: {r.get('label', '')}" for r in plan.relationships
         )
         insights_str = "\n".join(f"  - {i}" for i in plan.key_insights)
         criteria_str = "\n".join(f"  - {c}" for c in plan.success_criteria)
@@ -172,12 +199,12 @@ class DiagramGenerator:
 
 **Concept**: {plan.concept}
 **Diagram Type**: {plan.diagram_type}
-**Age Level**: {plan.educational_level}
+**Educational Level**: {plan.educational_level}
 
-**MUST INCLUDE All These Components** (total: {len(plan.components)}):
+**MUST INCLUDE All These Components** ({len(plan.components)} total):
 {components_str}
 
-**MUST INCLUDE All These Relationships** (total: {len(plan.relationships)}):
+**MUST INCLUDE All These Relationships** ({len(plan.relationships)} total):
 {relationships_str}
 
 **Key Teaching Points**:
@@ -186,126 +213,14 @@ class DiagramGenerator:
 **Success Criteria**:
 {criteria_str}
 
-IMPORTANT:
-1. Include EVERY component listed above in the diagram
-2. Show ALL relationships between components
-3. Make labels clear and readable
-4. Use appropriate shapes and colors for visual clarity
-5. Return complete draw.io XML with ALL mxCell elements
+REQUIREMENTS:
+1. Create a {plan.diagram_type} diagram
+2. Include ALL {len(plan.components)} components listed above
+3. Show ALL {len(plan.relationships)} relationships between components
+4. Use clear, readable labels
+5. Apply appropriate shapes and colors for visual clarity
+6. Return complete draw.io XML with proper structure
 
-Generate a clear, complete, pedagogically sound diagram using draw.io. The diagram must include all {len(plan.components)} components with all {len(plan.relationships)} relationships shown. The diagram should be appropriate for ages {plan.educational_level}."""
+Generate a clear, complete, pedagogically sound diagram for teaching students aged {plan.educational_level.split('-')[0]} years old."""
 
         return message
-
-    async def _extract_xml_from_stream(self, response_text: str) -> str:
-        """Extract XML from next-ai-draw-io streaming response.
-
-        The streaming response is in Server-Sent Events (SSE) format with
-        multiple JSON chunks. Each line starts with "data: " and contains JSON.
-        We need to extract the XML content from display_diagram tool result.
-
-        Args:
-            response_text: Raw streaming response text in SSE format
-
-        Returns:
-            Extracted XML string or None if not found
-        """
-        logger.debug(f"Parsing streaming response, length: {len(response_text)}")
-
-        # Split by newlines to handle streaming format
-        lines = response_text.strip().split("\n")
-        xml_content = None
-        event_count = 0
-
-        for line in lines:
-            if not line.strip():
-                continue
-
-            # Handle Server-Sent Events (SSE) format with "data: " prefix
-            json_str = line
-            if json_str.startswith("data: "):
-                json_str = json_str[6:]  # Remove "data: " prefix
-
-            try:
-                # Parse each line as JSON
-                data = json.loads(json_str)
-                event_count += 1
-
-                # Look for display_diagram tool result with XML
-                if isinstance(data, dict):
-                    # Check if this is a tool-input-available with display_diagram
-                    if (
-                        data.get("type") == "tool-input-available"
-                        and data.get("toolName") == "display_diagram"
-                    ):
-                        input_data = data.get("input", {})
-                        if isinstance(input_data, dict) and "xml" in input_data:
-                            xml_content = input_data["xml"]
-                            cell_count = xml_content.count("<mxCell")
-                            logger.debug(
-                                f"Found XML in tool-input-available",
-                                xml_length=len(xml_content),
-                                cell_count=cell_count,
-                                event_index=event_count,
-                            )
-                            break
-
-            except json.JSONDecodeError:
-                # This line might not be valid JSON, continue
-                continue
-
-        if not xml_content:
-            logger.warning(
-                "Could not extract XML from streaming response, trying direct parse"
-            )
-            # Fallback: try to find XML directly in response
-            if "<mxfile" in response_text:
-                start = response_text.find("<mxfile")
-                end = response_text.rfind("</mxfile>")
-                if start >= 0 and end > start:
-                    xml_content = response_text[start : end + 9]
-
-        # Wrap cell fragments in proper draw.io structure if needed
-        if xml_content and not xml_content.strip().startswith("<mxfile"):
-            cell_count = xml_content.count("<mxCell")
-            logger.debug(
-                f"Wrapping cell fragments in mxfile structure",
-                fragment_length=len(xml_content),
-                cell_count=cell_count,
-            )
-            # Validate we have a reasonable number of cells before wrapping
-            if cell_count < 2:
-                logger.warning(
-                    f"Very few cells in XML ({cell_count}), response might be incomplete",
-                    xml_preview=xml_content[:500],
-                )
-            xml_content = self._wrap_cells_in_mxfile(xml_content)
-
-        return xml_content
-
-    def _wrap_cells_in_mxfile(self, cells_xml: str) -> str:
-        """Wrap raw cell XML in a proper draw.io mxfile structure.
-
-        Next-ai-draw-io returns only the cell elements. We need to wrap them
-        in the proper draw.io XML structure with mxfile, diagram, mxGraphModel, and root.
-
-        Args:
-            cells_xml: Raw cell XML fragments from the API
-
-        Returns:
-            Complete draw.io XML with proper structure
-        """
-        # Wrap in proper draw.io structure
-        wrapped = f"""<?xml version="1.0" encoding="UTF-8"?>
-<mxfile host="drawio" modified="2024-01-01T00:00:00Z" agent="VisuaLearn" version="1.0">
-  <diagram name="Diagram">
-    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
-      <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        {cells_xml}
-      </root>
-    </mxGraphModel>
-  </diagram>
-</mxfile>"""
-        return wrapped
