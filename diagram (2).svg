@@ -1,0 +1,133 @@
+<mxfile host="app.diagrams.net" modified="2025-01-28T00:00:00.000Z" agent="VisuaLearn" version="1.0" type="device">
+  <diagram id="default" name="Default">
+    <mxGraphModel dx="0" dy="0" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" value="" parent="" vertex="1" />
+        <mxCell id="1" value="" parent="0" vertex="1" />
+        <mxCell id="2" value="Alice (Sender)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+  <mxGeometry x="100" y="40" width="120" height="40" as="geometry"/>
+</mxCell>
+<mxCell id="3" value="Bob (Receiver)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+  <mxGeometry x="600" y="40" width="120" height="40" as="geometry"/>
+</mxCell>
+<mxCell id="4" value="Alice's Key Pair" style="swimlane;whiteSpace=wrap;html=1;startSize=20;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+  <mxGeometry x="50" y="120" width="180" height="80" as="geometry"/>
+</mxCell>
+<mxCell id="5" value="Public Key" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="4">
+  <mxGeometry x="10" y="25" width="160" height="20" as="geometry"/>
+</mxCell>
+<mxCell id="6" value="Private Key" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="4">
+  <mxGeometry x="10" y="50" width="160" height="20" as="geometry"/>
+</mxCell>
+<mxCell id="7" value="Bob's Key Pair" style="swimlane;whiteSpace=wrap;html=1;startSize=20;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+  <mxGeometry x="550" y="120" width="180" height="80" as="geometry"/>
+</mxCell>
+<mxCell id="8" value="Public Key" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="7">
+  <mxGeometry x="10" y="25" width="160" height="20" as="geometry"/>
+</mxCell>
+<mxCell id="9" value="Private Key" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="7">
+  <mxGeometry x="10" y="50" width="160" height="20" as="geometry"/>
+</mxCell>
+<mxCell id="10" value="Message (Plaintext)" style="whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+  <mxGeometry x="320" y="250" width="150" height="40" as="geometry"/>
+</mxCell>
+<mxCell id="11" value="Ciphertext (Encrypted Message)" style="whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" vertex="1" parent="1">
+  <mxGeometry x="320" y="320" width="150" height="40" as="geometry"/>
+</mxCell>
+<mxCell id="12" value="Digital Signature" style="whiteSpace=wrap;html=1;fillColor=#f0f0f0;fontColor=#333333;strokeColor=#606060;" vertex="1" parent="1">
+  <mxGeometry x="320" y="450" width="150" height="40" as="geometry"/>
+</mxCell>
+<mxCell id="13" value="Verification Result (Authentic/Not Authentic)" style="whiteSpace=wrap;html=1;fillColor=#e0e0e0;fontColor=#333333;strokeColor=#505050;" vertex="1" parent="1">
+  <mxGeometry x="300" y="520" width="200" height="40" as="geometry"/>
+</mxCell>
+<mxCell id="14" value="1. Generates Key Pair" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#36393d;" edge="1" parent="1" source="2" target="4">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+<mxCell id="15" value="2. Generates Key Pair" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#36393d;" edge="1" parent="1" source="3" target="7">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+<mxCell id="16" value="3. Alice shares Public Key with Bob" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#36393d;" edge="1" parent="1" source="5" target="3">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="230" y="160"/>
+      <mxPoint x="500" y="160"/>
+      <mxPoint x="500" y="60"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="17" value="4. Bob shares Public Key with Alice" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.5;strokeColor=#36393d;" edge="1" parent="1" source="8" target="2">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="550" y="160"/>
+      <mxPoint x="300" y="160"/>
+      <mxPoint x="300" y="60"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="18" value="5. Encrypts Message (Plaintext) using Bob's Public Key" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#36393d;" edge="1" parent="1" source="2" target="11">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="160" y="90"/>
+      <mxPoint x="160" y="285"/>
+      <mxPoint x="395" y="285"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="19" value="6. Sends Ciphertext to Bob" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.7;strokeColor=#36393d;" edge="1" parent="1" source="11" target="3">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="470" y="340"/>
+      <mxPoint x="540" y="340"/>
+      <mxPoint x="540" y="68"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="20" value="7. Decrypts Ciphertext using Bob's Private Key" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#36393d;" edge="1" parent="1" source="3" target="10">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="660" y="90"/>
+      <mxPoint x="660" y="270"/>
+      <mxPoint x="400" y="270"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="21" value="8. Signs Message (Plaintext) using Alice's Private Key" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#36393d;" edge="1" parent="1" source="2" target="12">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="160" y="90"/>
+      <mxPoint x="160" y="470"/>
+      <mxPoint x="395" y="470"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="22" value="9a. Sends Message" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.3;entryX=0;entryY=0.3;strokeColor=#36393d;" edge="1" parent="1" source="10" target="3">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="470" y="262"/>
+      <mxPoint x="540" y="262"/>
+      <mxPoint x="540" y="52"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="23" value="9b. Sends Digital Signature" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.7;entryX=0;entryY=0.7;strokeColor=#36393d;" edge="1" parent="1" source="12" target="3">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="470" y="478"/>
+      <mxPoint x="540" y="478"/>
+      <mxPoint x="540" y="68"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="24" value="10. Verifies Digital Signature using Alice's Public Key" style="endArrow=classic;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#36393d;" edge="1" parent="1" source="3" target="13">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="660" y="90"/>
+      <mxPoint x="660" y="495"/>
+      <mxPoint x="400" y="495"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

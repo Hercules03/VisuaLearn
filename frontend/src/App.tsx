@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { ChatContainer } from '@/components/features/ChatContainer';
 import { InputArea } from '@/components/features/InputArea';
@@ -8,10 +8,124 @@ import { v4 as uuidv4 } from 'uuid';
 import { useDiagram } from '@/hooks/useDiagram';
 import { APIError } from '@/lib/api';
 
+// Sample diagram XML for demo mode
+const DEMO_DIAGRAMS: Record<string, string> = {
+  photosynthesis: `<mxfile host="app.diagrams.net" modified="2025-01-28T00:00:00.000Z" agent="VisuaLearn" version="1.0" type="device">
+  <diagram id="default" name="Photosynthesis">
+    <mxGraphModel dx="0" dy="0" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" value="" parent="" vertex="1" />
+        <mxCell id="1" value="" parent="0" vertex="1" />
+        <mxCell id="2" value="Photosynthesis" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="500" y="50" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="Inputs" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fontStyle=1;fillColor=#e1d5e7" vertex="1" parent="1">
+          <mxGeometry x="100" y="200" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="Sunlight" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="300" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="Water" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="150" y="300" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="CO₂" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="250" y="300" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="Outputs" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fontStyle=1;fillColor=#d5e8d4" vertex="1" parent="1">
+          <mxGeometry x="900" y="200" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="Glucose" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="850" y="300" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="9" value="Oxygen" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="950" y="300" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="10" edge="1" parent="1" source="3" target="2">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="160" y="260" as="sourcePoint" />
+            <mxPoint x="210" y="210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="11" edge="1" parent="1" source="4" target="3">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="90" y="360" as="sourcePoint" />
+            <mxPoint x="110" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="12" edge="1" parent="1" source="5" target="3">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="190" y="360" as="sourcePoint" />
+            <mxPoint x="150" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="13" edge="1" parent="1" source="6" target="3">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="290" y="360" as="sourcePoint" />
+            <mxPoint x="190" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="14" edge="1" parent="1" source="2" target="7">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="110" as="sourcePoint" />
+            <mxPoint x="960" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="15" edge="1" parent="1" source="7" target="8">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="960" y="260" as="sourcePoint" />
+            <mxPoint x="890" y="360" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="16" edge="1" parent="1" source="7" target="9">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="960" y="260" as="sourcePoint" />
+            <mxPoint x="990" y="360" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>`,
+};
+
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const { generateDiagram, state } = useDiagram();
+
+  // Check for demo mode on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const demoParam = params.get('demo');
+    if (demoParam && DEMO_DIAGRAMS[demoParam]) {
+      setIsDemoMode(true);
+      // Pre-load demo message
+      const botMsg: Message = {
+        id: uuidv4(),
+        role: 'assistant',
+        content: `📚 DEMO MODE: Showing sample diagram for "${demoParam}"\n\nThis is a pre-generated diagram for testing the frontend without consuming API tokens. In production, the system will generate diagrams based on your input.`,
+        timestamp: Date.now(),
+        diagram: {
+          image: '',
+          xml_content: DEMO_DIAGRAMS[demoParam],
+          xml: DEMO_DIAGRAMS[demoParam],
+          export_urls: {
+            png: '',
+            svg: '',
+            xml: '',
+          },
+          xmlFilename: '',
+          metadata: {
+            score: 95,
+            iterations: 1,
+            totalTime: 0.5,
+          },
+        },
+      };
+      setMessages([botMsg]);
+    }
+  }, []);
 
   const mapProgressToStep = (progress: number): ProcessingStep => {
     if (progress < 20) return 'analyzing';
@@ -22,6 +136,14 @@ function App() {
   };
 
   const handleSendMessage = async (content: string) => {
+    // Check if in demo mode
+    if (isDemoMode) {
+      setErrorMessage(
+        '📚 Demo Mode: To generate new diagrams, remove the ?demo= parameter from the URL and try again. This will allow the system to use the full API pipeline.'
+      );
+      return;
+    }
+
     // Validate input
     const trimmed = content.trim();
     if (!trimmed) {
@@ -52,9 +174,6 @@ function App() {
         educational_level: '11-13', // Default to ages 11-13 (intermediate)
       });
 
-      // Convert SVG content to data URL for inline display
-      const imageUrl = `data:image/svg+xml;base64,${btoa(response.svg_content)}`;
-
       // Add bot response with diagram
       const botMsg: Message = {
         id: uuidv4(),
@@ -62,15 +181,16 @@ function App() {
         content: `I've created a diagram for "${trimmed}". This visual representation shows the key components and their relationships.\n\n⚠️ This diagram is AI-generated. Please verify with your teacher or textbook for accuracy.`,
         timestamp: Date.now(),
         diagram: {
-          image: imageUrl,
-          svg_content: response.svg_content,
-          xml: response.xml_content,
+          image: '',
+          diagram_svg: response.diagram_svg,
+          xml_content: response.diagram_svg,
+          xml: response.diagram_svg,
           export_urls: {
             png: `/api/export/${response.svg_filename}`,
             svg: `/api/export/${response.svg_filename}`,
             xml: `/api/export/${response.xml_filename}`,
           },
-          svgFilename: response.svg_filename,
+          xmlFilename: response.xml_filename,
           metadata: {
             score: response.review_score,
             iterations: response.iterations,

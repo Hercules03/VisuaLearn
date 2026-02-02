@@ -39,13 +39,12 @@ class TestOrchestrationResult:
             components=["A", "B"],
             relationships=[{"from": "A", "to": "B"}],
             success_criteria=["Test"],
-            educational_level="11-13",
             key_insights=["Test insight"],
         )
 
         result = OrchestrationResult(
-            png_filename="test.png",
             svg_filename="test.svg",
+            xml_filename="test.xml",
             xml_content="<mxfile></mxfile>",
             plan=plan,
             review_score=95,
@@ -54,8 +53,8 @@ class TestOrchestrationResult:
             metadata={"test": "value"},
         )
 
-        assert result.png_filename == "test.png"
         assert result.svg_filename == "test.svg"
+        assert result.xml_filename == "test.xml"
         assert result.review_score == 95
         assert result.iterations == 1
 
@@ -67,13 +66,12 @@ class TestOrchestrationResult:
             components=["A"],
             relationships=[],
             success_criteria=["Test"],
-            educational_level="11-13",
             key_insights=["Test"],
         )
 
         result = OrchestrationResult(
-            png_filename="test.png",
             svg_filename="test.svg",
+            xml_filename="test.xml",
             xml_content="<mxfile></mxfile>",
             plan=plan,
             review_score=85,
@@ -84,8 +82,8 @@ class TestOrchestrationResult:
 
         result_dict = result.to_dict()
 
-        assert result_dict["png_filename"] == "test.png"
         assert result_dict["svg_filename"] == "test.svg"
+        assert result_dict["xml_filename"] == "test.xml"
         assert result_dict["review_score"] == 85
         assert result_dict["iterations"] == 2
         assert "plan" in result_dict
@@ -106,7 +104,7 @@ class TestOrchestratorPlanningFailure:
         orchestrator.planning_agent.analyze = mock_plan
 
         with pytest.raises(OrchestrationError, match="Concept analysis failed"):
-            await orchestrator.orchestrate("Test", "11-13")
+            await orchestrator.orchestrate("\1")
 
 
 class TestOrchestratorGenerationFailure:
@@ -122,7 +120,6 @@ class TestOrchestratorGenerationFailure:
             components=["A"],
             relationships=[],
             success_criteria=["Test"],
-            educational_level="11-13",
             key_insights=["Test"],
         )
 
@@ -137,7 +134,7 @@ class TestOrchestratorGenerationFailure:
         orchestrator.diagram_generator.generate = mock_generate
 
         with pytest.raises(OrchestrationError, match="Diagram generation failed"):
-            await orchestrator.orchestrate("Test", "11-13")
+            await orchestrator.orchestrate("\1")
 
 
 class TestOrchestratorReviewFailure:
@@ -153,7 +150,6 @@ class TestOrchestratorReviewFailure:
             components=["A"],
             relationships=[],
             success_criteria=["Test"],
-            educational_level="11-13",
             key_insights=["Test"],
         )
 
@@ -172,7 +168,7 @@ class TestOrchestratorReviewFailure:
         orchestrator.review_agent.validate = mock_validate
 
         with pytest.raises(OrchestrationError, match="Quality review failed"):
-            await orchestrator.orchestrate("Test", "11-13")
+            await orchestrator.orchestrate("\1")
 
 
 class TestOrchestratorConversionFailure:
@@ -188,7 +184,6 @@ class TestOrchestratorConversionFailure:
             components=["A"],
             relationships=[],
             success_criteria=["Test"],
-            educational_level="11-13",
             key_insights=["Test"],
         )
 
@@ -219,7 +214,7 @@ class TestOrchestratorConversionFailure:
         orchestrator.image_converter.to_png = mock_to_png
 
         with pytest.raises(OrchestrationError, match="Pipeline failed"):
-            await orchestrator.orchestrate("Test", "11-13")
+            await orchestrator.orchestrate("\1")
 
 
 class TestOrchestratorStorageFailure:
@@ -235,7 +230,6 @@ class TestOrchestratorStorageFailure:
             components=["A"],
             relationships=[],
             success_criteria=["Test"],
-            educational_level="11-13",
             key_insights=["Test"],
         )
 
@@ -281,7 +275,7 @@ class TestOrchestratorStorageFailure:
         orchestrator.file_manager.delete_file = mock_delete_file
 
         with pytest.raises(OrchestrationError):
-            await orchestrator.orchestrate("Test", "11-13")
+            await orchestrator.orchestrate("\1")
 
 
 class TestOrchestratorSuccessful:
@@ -300,7 +294,6 @@ class TestOrchestratorSuccessful:
                 {"from": "Water", "to": "Glucose"},
             ],
             success_criteria=["All inputs present", "Clear output"],
-            educational_level="11-13",
             key_insights=["Plants make food", "Sunlight is energy source"],
         )
 
@@ -341,10 +334,10 @@ class TestOrchestratorSuccessful:
         orchestrator.image_converter.to_svg = mock_to_svg
         orchestrator.file_manager.save_file = mock_save_file
 
-        result = await orchestrator.orchestrate("Photosynthesis", "11-13")
+        result = await orchestrator.orchestrate("Photosynthesis")
 
-        assert result.png_filename == "test_diagram.png"
-        assert result.svg_filename == "test_diagram.svg"
+        assert result.xml_filename == "test_diagram.xml"
+        assert result.svg_filename == "test_diagram.xml"
         assert result.review_score == 95
         assert result.iterations == 1
         assert result.plan.concept == "Photosynthesis"
@@ -360,7 +353,6 @@ class TestOrchestratorSuccessful:
             components=["A", "B"],
             relationships=[],
             success_criteria=["Test"],
-            educational_level="11-13",
             key_insights=["Test"],
         )
 
@@ -425,7 +417,7 @@ class TestOrchestratorSuccessful:
         orchestrator.image_converter.to_svg = mock_to_svg
         orchestrator.file_manager.save_file = mock_save_file
 
-        result = await orchestrator.orchestrate("Test", "11-13")
+        result = await orchestrator.orchestrate("\1")
 
         assert result.iterations == 3
         assert result.review_score == 88
@@ -448,7 +440,6 @@ class TestOrchestratorMetadata:
             components=["A"],
             relationships=[],
             success_criteria=["Test"],
-            educational_level="11-13",
             key_insights=["Test"],
         )
 
@@ -486,7 +477,7 @@ class TestOrchestratorMetadata:
         orchestrator.image_converter.to_svg = mock_to_svg
         orchestrator.file_manager.save_file = mock_save_file
 
-        result = await orchestrator.orchestrate("Test", "11-13")
+        result = await orchestrator.orchestrate("\1")
 
         assert "step_times" in result.metadata
         assert "planning" in result.metadata["step_times"]
@@ -509,7 +500,6 @@ class TestOrchestratorMetadata:
                 {"from": "B", "to": "C"},
             ],
             success_criteria=["Test"],
-            educational_level="14-15",
             key_insights=["Insight1", "Insight2"],
         )
 
@@ -547,7 +537,7 @@ class TestOrchestratorMetadata:
         orchestrator.image_converter.to_svg = mock_to_svg
         orchestrator.file_manager.save_file = mock_save_file
 
-        result = await orchestrator.orchestrate("Complex Concept", "14-15")
+        result = await orchestrator.orchestrate("\1")
 
         assert result.metadata["concept"] == "Complex Concept"
         assert result.metadata["components_count"] == 4
@@ -571,7 +561,6 @@ class TestOrchestratorIntegration:
                 {"from": "Precipitation", "to": "Collection"},
             ],
             success_criteria=["All stages present"],
-            educational_level="8-10",
             key_insights=["Continuous cycle"],
         )
 
@@ -609,7 +598,7 @@ class TestOrchestratorIntegration:
         orchestrator.image_converter.to_svg = mock_to_svg
         orchestrator.file_manager.save_file = mock_save_file
 
-        result = await orchestrator.orchestrate("Water Cycle", "8-10")
+        result = await orchestrator.orchestrate("\1")
 
         # Verify complete result structure
         assert isinstance(result, OrchestrationResult)
@@ -619,7 +608,7 @@ class TestOrchestratorIntegration:
         assert result.review_score == 94
         assert result.iterations == 1
         assert result.xml_content == "<mxfile><diagram>Water Cycle</diagram></mxfile>"
-        assert ".png" in result.png_filename
-        assert ".svg" in result.svg_filename
+        assert ".xml" in result.xml_filename
+        assert ".xml" in result.svg_filename or ".svg" in result.svg_filename
         assert result.total_time_seconds > 0
         assert result.metadata["concept"] == "Water Cycle"

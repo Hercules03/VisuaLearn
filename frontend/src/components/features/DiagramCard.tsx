@@ -8,7 +8,7 @@ import { downloadFile } from "@/lib/api";
 
 interface DiagramCardProps {
   image: string;
-  xmlContent: string;
+  diagramSvg: string;
   exportUrls: {
     png: string;
     svg: string;
@@ -16,7 +16,7 @@ interface DiagramCardProps {
   };
 }
 
-export function DiagramCard({ image, xmlContent, exportUrls }: DiagramCardProps) {
+export function DiagramCard({ image, diagramSvg, exportUrls }: DiagramCardProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -67,7 +67,7 @@ export function DiagramCard({ image, xmlContent, exportUrls }: DiagramCardProps)
 
           {/* Diagram Renderer Component */}
           <div className="absolute inset-0 z-10">
-            <DiagramRenderer xmlContent={xmlContent} height={400} />
+            <DiagramRenderer diagramSvg={diagramSvg} height={400} />
           </div>
 
           {/* Expand button overlay */}
@@ -138,8 +138,7 @@ export function DiagramCard({ image, xmlContent, exportUrls }: DiagramCardProps)
       <DiagramDialog
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
-        imageUrl={image}
-        xmlContent={xmlContent}
+        diagramSvg={diagramSvg}
       />
     </>
   );

@@ -33,6 +33,7 @@ file_manager = FileManager()
         500: {"model": ErrorResponse, "description": "Server error"},
     },
 )
+
 async def generate_diagram(request: DiagramRequest) -> DiagramResponse:
     """Generate an educational diagram from a concept.
 
@@ -56,14 +57,12 @@ async def generate_diagram(request: DiagramRequest) -> DiagramResponse:
     logger.info(
         "Diagram generation requested",
         concept=request.concept,
-        educational_level=request.educational_level,
     )
 
     try:
         # Execute orchestration pipeline
         result = await orchestrator.orchestrate(
-            concept=request.concept,
-            educational_level=request.educational_level,
+            user_input=request.concept,
         )
 
         logger.info(
@@ -78,15 +77,13 @@ async def generate_diagram(request: DiagramRequest) -> DiagramResponse:
         return DiagramResponse(
             svg_filename=result.svg_filename,
             xml_filename=result.xml_filename,
-            svg_content=result.svg_content,
-            xml_content=result.xml_content,
+            diagram_svg=result.diagram_svg,
             plan={
                 "concept": result.plan.concept,
                 "diagram_type": result.plan.diagram_type,
                 "components": result.plan.components,
                 "relationships": result.plan.relationships,
                 "success_criteria": result.plan.success_criteria,
-                "educational_level": result.plan.educational_level,
                 "key_insights": result.plan.key_insights,
             },
             review_score=result.review_score,
@@ -100,8 +97,8 @@ async def generate_diagram(request: DiagramRequest) -> DiagramResponse:
                     "conversion": result.metadata["step_times"]["conversion"],
                     "storage": result.metadata["step_times"]["storage"],
                 },
-                "refinement_instructions": result.metadata["refinement_instructions"],
-                "concept": result.metadata["concept"],
+                "refinement_attempts": result.metadata.get("refinement_attempts", []),
+                "concept": result.metadata["user_input"],
                 "components_count": result.metadata["components_count"],
                 "relationships_count": result.metadata["relationships_count"],
             },
@@ -197,8 +194,7 @@ async def generate_diagram_stream(request: DiagramRequest):
 
             # Execute orchestration with progress tracking
             result = await orchestrator.orchestrate(
-                concept=request.concept,
-                educational_level=request.educational_level,
+                user_input=request.concept,
             )
 
             logger.info(
@@ -213,15 +209,13 @@ async def generate_diagram_stream(request: DiagramRequest):
             diagram_response = DiagramResponse(
                 svg_filename=result.svg_filename,
                 xml_filename=result.xml_filename,
-                svg_content=result.svg_content,
-                xml_content=result.xml_content,
+                diagram_svg=result.diagram_svg,
                 plan={
                     "concept": result.plan.concept,
                     "diagram_type": result.plan.diagram_type,
                     "components": result.plan.components,
                     "relationships": result.plan.relationships,
                     "success_criteria": result.plan.success_criteria,
-                    "educational_level": result.plan.educational_level,
                     "key_insights": result.plan.key_insights,
                 },
                 review_score=result.review_score,
@@ -235,10 +229,8 @@ async def generate_diagram_stream(request: DiagramRequest):
                         "conversion": result.metadata["step_times"]["conversion"],
                         "storage": result.metadata["step_times"]["storage"],
                     },
-                    "refinement_instructions": result.metadata[
-                        "refinement_instructions"
-                    ],
-                    "concept": result.metadata["concept"],
+                    "refinement_attempts": result.metadata.get("refinement_attempts", []),
+                    "concept": result.metadata["user_input"],
                     "components_count": result.metadata["components_count"],
                     "relationships_count": result.metadata[
                         "relationships_count"

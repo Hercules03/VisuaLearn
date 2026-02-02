@@ -20,7 +20,6 @@ class PlanningOutput:
         components: list[str],
         relationships: list[dict],
         success_criteria: list[str],
-        educational_level: str,
         key_insights: list[str],
     ):
         """Initialize planning output.
@@ -31,7 +30,6 @@ class PlanningOutput:
             components: List of diagram elements
             relationships: List of relationships between components
             success_criteria: Measurable criteria for validation
-            educational_level: Target age group (8-10, 11-13, 14-15)
             key_insights: Important teaching points
         """
         self.concept = concept
@@ -39,7 +37,6 @@ class PlanningOutput:
         self.components = components
         self.relationships = relationships
         self.success_criteria = success_criteria
-        self.educational_level = educational_level
         self.key_insights = key_insights
 
     def to_dict(self) -> dict:
@@ -50,7 +47,6 @@ class PlanningOutput:
             "components": self.components,
             "relationships": self.relationships,
             "success_criteria": self.success_criteria,
-            "educational_level": self.educational_level,
             "key_insights": self.key_insights,
         }
 
@@ -63,19 +59,20 @@ class PlanningAgent:
         self.timeout = settings.planning_timeout
         self.gemini_api_key = settings.google_api_key
         self.executor = ThreadPoolExecutor(max_workers=1)
+        self.model = settings.model
 
         # Initialize Gemini client
         try:
             import google.generativeai as genai
 
             genai.configure(api_key=self.gemini_api_key)
-            self.client = genai.GenerativeModel("gemini-2.5-flash")
-            logger.info("Planning agent initialized with Gemini 2.5 Flash")
+            self.client = genai.GenerativeModel(self.model)
+            logger.info(f"Planning agent initialized with {self.model}")
         except Exception as e:
             logger.error(f"Failed to initialize Gemini client: {e}")
             raise PlanningError(f"Failed to initialize LLM: {e}")
 
-    async def analyze(self, user_input: str, language: str = "en") -> PlanningOutput:
+    async def analyze(self, user_input: str) -> PlanningOutput:
         """Analyze user input and create diagram plan.
 
         Analyzes the user's question/topic and generates specifications for
@@ -89,7 +86,6 @@ class PlanningAgent:
 
         Args:
             user_input: User's question or topic (1-1000 chars)
-            language: Language code (en or zh)
 
         Returns:
             PlanningOutput with complete diagram specifications
@@ -106,13 +102,12 @@ class PlanningAgent:
         logger.info(
             "Planning analysis started",
             user_input=user_input[:100],
-            language=language,
         )
 
         try:
             # Run analysis with timeout
             result = await asyncio.wait_for(
-                self._analyze_internal(user_input, language),
+                self._analyze_internal(user_input),
                 timeout=self.timeout,
             )
             logger.info(
@@ -134,12 +129,11 @@ class PlanningAgent:
             logger.error(f"Planning analysis failed: {e}")
             raise PlanningError(f"Failed to analyze concept: {str(e)}")
 
-    async def _analyze_internal(self, user_input: str, language: str) -> PlanningOutput:
+    async def _analyze_internal(self, user_input: str) -> PlanningOutput:
         """Internal analysis implementation using Gemini.
 
         Args:
             user_input: User's question or topic
-            language: Language code (en or zh)
 
         Returns:
             PlanningOutput with diagram specifications
@@ -148,20 +142,19 @@ class PlanningAgent:
             PlanningError: If analysis or JSON parsing fails
         """
         # Create detailed prompt for concept analysis
-        prompt = f"""You are an expert educational diagram designer specializing in creating visual explanations for students aged 8-15.
+        prompt = f"""You are an expert educational diagram designer specializing in creating visual explanations for the user.
 
 Task: Analyze this topic and create a detailed diagram plan.
 
 Topic: {user_input}
-Language: {language}
 
 Requirements:
 1. Identify the core concept clearly
 2. Choose appropriate diagram type (flowchart for processes, mindmap for relationships, sequence for steps, hierarchy for structure)
 3. Identify all key components (5-15 elements)
 4. Define clear relationships between components
-5. Assess target age group
-6. Define measurable success criteria
+5. Define measurable success criteria
+6. Define key insights
 
 Respond ONLY with valid JSON in this exact structure (no markdown, no code blocks):
 {{
@@ -173,7 +166,6 @@ Respond ONLY with valid JSON in this exact structure (no markdown, no code block
         {{"from": "source2", "to": "destination2", "label": "relationship_description2"}}
     ],
     "success_criteria": ["criterion1", "criterion2"],
-    "educational_level": "8-10|11-13|14-15",
     "key_insights": ["insight1", "insight2"]
 }}
 
@@ -181,7 +173,6 @@ Ensure:
 - Components are specific and relevant
 - All relationships show meaningful connections
 - Success criteria are measurable
-- Educational level matches the topic complexity
 - Key insights highlight important teaching points"""
 
         try:
@@ -206,7 +197,6 @@ Ensure:
                 "components",
                 "relationships",
                 "success_criteria",
-                "educational_level",
                 "key_insights",
             ]
             missing_fields = [f for f in required_fields if f not in json_data]
@@ -223,14 +213,6 @@ Ensure:
                     f"Must be one of: {', '.join(valid_types)}"
                 )
 
-            # Validate educational_level
-            valid_levels = ["8-10", "11-13", "14-15"]
-            if json_data["educational_level"] not in valid_levels:
-                raise PlanningError(
-                    f"Invalid educational level: {json_data['educational_level']}. "
-                    f"Must be one of: {', '.join(valid_levels)}"
-                )
-
             # Ensure lists are not empty
             if not json_data["components"]:
                 raise PlanningError("Components list cannot be empty")
@@ -242,7 +224,6 @@ Ensure:
                 components=list(json_data["components"]),
                 relationships=list(json_data["relationships"]),
                 success_criteria=list(json_data["success_criteria"]),
-                educational_level=str(json_data["educational_level"]),
                 key_insights=list(json_data["key_insights"]),
             )
 

@@ -14,12 +14,6 @@ class DiagramRequest(BaseModel):
         max_length=1000,
         description="Core concept to explain with diagram",
     )
-    educational_level: str = Field(
-        default="8-10",
-        pattern="^(8-10|11-13|14-15)$",
-        description="Target age group (8-10, 11-13, or 14-15). Defaults to 8-10 if not provided.",
-    )
-
 
 class PlanningData(BaseModel):
     """Planning output embedded in response."""
@@ -33,7 +27,6 @@ class PlanningData(BaseModel):
         ..., description="Relationships between components"
     )
     success_criteria: list[str] = Field(..., description="Validation criteria")
-    educational_level: str = Field(..., description="Target age group")
     key_insights: list[str] = Field(..., description="Important teaching points")
 
 
@@ -51,8 +44,9 @@ class DiagramMetadata(BaseModel):
     """Metadata about diagram generation."""
 
     step_times: StepTimes = Field(..., description="Timing for each step")
-    refinement_instructions: list[str] = Field(
-        ..., description="Refinements applied during review"
+    refinement_attempts: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Refinement attempts made via MCP (iteration, score, feedback)",
     )
     concept: str = Field(..., description="Core concept")
     components_count: int = Field(..., description="Number of diagram components")
@@ -60,12 +54,24 @@ class DiagramMetadata(BaseModel):
 
 
 class DiagramResponse(BaseModel):
-    """Response model for successful diagram generation."""
+    """Response model for successful diagram generation.
+
+    Diagram rendering architecture:
+    - Backend: Generates draw.io XML, validates, and converts to SVG
+    - Backend: SVG rendering via Playwright + mxGraph
+    - Frontend: Renders SVG directly (no external dependencies)
+    - Client: Native SVG viewing with zoom, pan, export via backend APIs
+
+    This approach provides accurate rendering with no client-side complexity.
+    """
 
     svg_filename: str = Field(..., description="Filename of generated SVG image for download")
     xml_filename: str = Field(..., description="Filename of generated XML for download/editing")
-    svg_content: str = Field(..., description="SVG diagram content for inline display")
-    xml_content: str = Field(..., description="Raw draw.io XML diagram")
+    diagram_svg: str = Field(
+        ...,
+        description="Generated SVG diagram for direct frontend rendering. "
+        "Frontend renders via native <svg> or react-svg component.",
+    )
     plan: PlanningData = Field(..., description="Planning analysis")
     review_score: int = Field(
         ..., ge=0, le=100, description="Final review score (0-100)"

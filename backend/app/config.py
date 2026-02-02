@@ -8,9 +8,10 @@ class Settings(BaseSettings):
 
     # Google Gemini API
     google_api_key: str
+    model: str
 
     # External Services
-    drawio_service_url: str = "http://localhost:3001"
+    drawio_service_url: str
 
     # Server Configuration
     debug: bool = False

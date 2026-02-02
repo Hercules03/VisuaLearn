@@ -7,11 +7,10 @@ import { DiagramRenderer } from "./DiagramRenderer";
 interface DiagramDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  imageUrl?: string;
-  xmlContent?: string;
+  diagramSvg?: string;
 }
 
-export function DiagramDialog({ isOpen, onClose, imageUrl, xmlContent }: DiagramDialogProps) {
+export function DiagramDialog({ isOpen, onClose, diagramSvg }: DiagramDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[95vw] h-[90vh] p-0 overflow-hidden bg-slate-50 border-0">
@@ -74,15 +73,9 @@ export function DiagramDialog({ isOpen, onClose, imageUrl, xmlContent }: Diagram
                   wrapperClass="!w-full !h-full"
                   contentClass="!w-full !h-full flex items-center justify-center"
                 >
-                  {imageUrl && imageUrl.trim() ? (
-                    <img
-                      src={imageUrl}
-                      alt="Diagram Fullscreen"
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  ) : xmlContent ? (
+                  {diagramSvg ? (
                     <div style={{ width: "100%", height: "100%" }}>
-                      <DiagramRenderer xmlContent={xmlContent} height={window.innerHeight * 0.9} />
+                      <DiagramRenderer diagramSvg={diagramSvg} height={window.innerHeight * 0.9} />
                     </div>
                   ) : (
                     <div className="text-slate-400">No diagram available</div>
