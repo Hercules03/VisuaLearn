@@ -1,0 +1,116 @@
+{
+  "timestamp": "2026-02-02T23:08:04.845365",
+  "request_id": "d1add61d",
+  "step": "planning_agent",
+  "data": {
+    "concept": "Asymmetric key cryptography uses a pair of keys (public and private) for secure communication, enabling both encryption/decryption and digital signatures.",
+    "diagram_type": "sequence",
+    "components": [
+      "Sender (Alice)",
+      "Receiver (Bob)",
+      "Public Key (Alice)",
+      "Private Key (Alice)",
+      "Public Key (Bob)",
+      "Private Key (Bob)",
+      "Original Message",
+      "Encrypted Message (by Bob's Public Key)",
+      "Decrypted Message (by Bob's Private Key)",
+      "Signed Message (by Alice's Private Key)",
+      "Verified Message (by Alice's Public Key)",
+      "Digital Signature",
+      "Secure Channel",
+      "Insecure Channel"
+    ],
+    "relationships": [
+      {
+        "from": "Sender (Alice)",
+        "to": "Original Message",
+        "label": "creates"
+      },
+      {
+        "from": "Receiver (Bob)",
+        "to": "Public Key (Bob)",
+        "label": "generates and shares"
+      },
+      {
+        "from": "Receiver (Bob)",
+        "to": "Private Key (Bob)",
+        "label": "generates and keeps secret"
+      },
+      {
+        "from": "Sender (Alice)",
+        "to": "Public Key (Alice)",
+        "label": "generates and shares"
+      },
+      {
+        "from": "Sender (Alice)",
+        "to": "Private Key (Alice)",
+        "label": "generates and keeps secret"
+      },
+      {
+        "from": "Original Message",
+        "to": "Encrypted Message (by Bob's Public Key)",
+        "label": "encrypted with Bob's Public Key"
+      },
+      {
+        "from": "Sender (Alice)",
+        "to": "Encrypted Message (by Bob's Public Key)",
+        "label": "sends via Insecure Channel"
+      },
+      {
+        "from": "Encrypted Message (by Bob's Public Key)",
+        "to": "Receiver (Bob)",
+        "label": "receives"
+      },
+      {
+        "from": "Encrypted Message (by Bob's Public Key)",
+        "to": "Decrypted Message (by Bob's Private Key)",
+        "label": "decrypted with Bob's Private Key"
+      },
+      {
+        "from": "Receiver (Bob)",
+        "to": "Decrypted Message (by Bob's Private Key)",
+        "label": "reads"
+      },
+      {
+        "from": "Original Message",
+        "to": "Digital Signature",
+        "label": "hashed and signed with Alice's Private Key"
+      },
+      {
+        "from": "Sender (Alice)",
+        "to": "Signed Message (by Alice's Private Key)",
+        "label": "sends with Original Message via Insecure Channel"
+      },
+      {
+        "from": "Signed Message (by Alice's Private Key)",
+        "to": "Receiver (Bob)",
+        "label": "receives"
+      },
+      {
+        "from": "Signed Message (by Alice's Private Key)",
+        "to": "Verified Message (by Alice's Public Key)",
+        "label": "verified with Alice's Public Key"
+      },
+      {
+        "from": "Receiver (Bob)",
+        "to": "Verified Message (by Alice's Public Key)",
+        "label": "confirms authenticity/integrity"
+      }
+    ],
+    "success_criteria": [
+      "User can explain the difference between public and private keys.",
+      "User can identify the correct key for encryption and decryption.",
+      "User can articulate how asymmetric keys achieve confidentiality.",
+      "User can articulate how asymmetric keys achieve authenticity and integrity (digital signatures).",
+      "User can trace the flow of information for both encryption and signing scenarios."
+    ],
+    "key_insights": [
+      "The public key can encrypt, but only the corresponding private key can decrypt.",
+      "The private key can sign, but anyone with the public key can verify the signature.",
+      "Asymmetric cryptography solves the key distribution problem of symmetric keys.",
+      "Both confidentiality (encryption) and authenticity/integrity (digital signatures) can be achieved, often simultaneously, using the same key pairs.",
+      "Security relies on the private key remaining secret."
+    ]
+  }
+}

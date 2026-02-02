@@ -1,0 +1,186 @@
+{
+  "timestamp": "2026-02-02T22:58:45.729744",
+  "request_id": "55169a54",
+  "step": "planning_agent",
+  "data": {
+    "concept": "Asymmetric key cryptography uses a pair of mathematically linked keys (public and private) for secure communication, enabling both confidentiality (encryption/decryption) and authenticity/integrity (digital signatures).",
+    "diagram_type": "flowchart",
+    "components": [
+      "Alice (Sender)",
+      "Bob (Receiver)",
+      "Key Pair Generator",
+      "Bob's Public Key",
+      "Bob's Private Key",
+      "Alice's Public Key",
+      "Alice's Private Key",
+      "Plaintext Data",
+      "Asymmetric Encryption (Process)",
+      "Ciphertext",
+      "Asymmetric Decryption (Process)",
+      "Digital Signature Creation (Process)",
+      "Digital Signature",
+      "Digital Signature Verification (Process)",
+      "Communication Channel"
+    ],
+    "relationships": [
+      {
+        "from": "Key Pair Generator",
+        "to": "Bob's Public Key",
+        "label": "Creates for Bob"
+      },
+      {
+        "from": "Key Pair Generator",
+        "to": "Bob's Private Key",
+        "label": "Creates for Bob"
+      },
+      {
+        "from": "Key Pair Generator",
+        "to": "Alice's Public Key",
+        "label": "Creates for Alice"
+      },
+      {
+        "from": "Key Pair Generator",
+        "to": "Alice's Private Key",
+        "label": "Creates for Alice"
+      },
+      {
+        "from": "Bob's Public Key",
+        "to": "Alice (Sender)",
+        "label": "Shared with"
+      },
+      {
+        "from": "Alice (Sender)",
+        "to": "Asymmetric Encryption (Process)",
+        "label": "Encrypts data for Bob"
+      },
+      {
+        "from": "Plaintext Data",
+        "to": "Asymmetric Encryption (Process)",
+        "label": "Input for encryption"
+      },
+      {
+        "from": "Bob's Public Key",
+        "to": "Asymmetric Encryption (Process)",
+        "label": "Key for encryption"
+      },
+      {
+        "from": "Asymmetric Encryption (Process)",
+        "to": "Ciphertext",
+        "label": "Produces"
+      },
+      {
+        "from": "Ciphertext",
+        "to": "Communication Channel",
+        "label": "Transmitted via"
+      },
+      {
+        "from": "Communication Channel",
+        "to": "Bob (Receiver)",
+        "label": "Received by"
+      },
+      {
+        "from": "Bob (Receiver)",
+        "to": "Asymmetric Decryption (Process)",
+        "label": "Decrypts data"
+      },
+      {
+        "from": "Ciphertext",
+        "to": "Asymmetric Decryption (Process)",
+        "label": "Input for decryption"
+      },
+      {
+        "from": "Bob's Private Key",
+        "to": "Asymmetric Decryption (Process)",
+        "label": "Key for decryption (kept secret)"
+      },
+      {
+        "from": "Asymmetric Decryption (Process)",
+        "to": "Plaintext Data",
+        "label": "Recovers original message"
+      },
+      {
+        "from": "Alice's Private Key",
+        "to": "Alice (Sender)",
+        "label": "Kept secret by"
+      },
+      {
+        "from": "Alice's Public Key",
+        "to": "Bob (Receiver)",
+        "label": "Shared with"
+      },
+      {
+        "from": "Alice (Sender)",
+        "to": "Digital Signature Creation (Process)",
+        "label": "Signs data"
+      },
+      {
+        "from": "Plaintext Data",
+        "to": "Digital Signature Creation (Process)",
+        "label": "Input for signing"
+      },
+      {
+        "from": "Alice's Private Key",
+        "to": "Digital Signature Creation (Process)",
+        "label": "Key for signing"
+      },
+      {
+        "from": "Digital Signature Creation (Process)",
+        "to": "Digital Signature",
+        "label": "Produces"
+      },
+      {
+        "from": "Plaintext Data",
+        "to": "Communication Channel",
+        "label": "Sent along with signature"
+      },
+      {
+        "from": "Digital Signature",
+        "to": "Communication Channel",
+        "label": "Sent along with message"
+      },
+      {
+        "from": "Communication Channel",
+        "to": "Bob (Receiver)",
+        "label": "Received by"
+      },
+      {
+        "from": "Bob (Receiver)",
+        "to": "Digital Signature Verification (Process)",
+        "label": "Verifies signature"
+      },
+      {
+        "from": "Plaintext Data",
+        "to": "Digital Signature Verification (Process)",
+        "label": "Input for verification"
+      },
+      {
+        "from": "Digital Signature",
+        "to": "Digital Signature Verification (Process)",
+        "label": "Input for verification"
+      },
+      {
+        "from": "Alice's Public Key",
+        "to": "Digital Signature Verification (Process)",
+        "label": "Key for verification"
+      },
+      {
+        "from": "Digital Signature Verification (Process)",
+        "to": "Plaintext Data",
+        "label": "Confirms integrity & authenticity of"
+      }
+    ],
+    "success_criteria": [
+      "User can correctly identify which key (public/private) belongs to which party (sender/receiver) for encryption.",
+      "User can correctly identify which key (public/private) belongs to which party (sender/receiver) for digital signatures.",
+      "User can trace the flow of data for achieving confidentiality using asymmetric keys.",
+      "User can trace the flow of data for achieving authenticity and integrity using asymmetric keys."
+    ],
+    "key_insights": [
+      "Asymmetric cryptography offers both confidentiality (via encryption) and authentication/integrity (via digital signatures) using the same fundamental key pair mechanism.",
+      "A public key can be freely distributed, but its corresponding private key must be kept secret to maintain security.",
+      "For confidentiality, the sender encrypts with the recipient's public key, and the recipient decrypts with their own private key.",
+      "For authentication and integrity, the sender signs with their own private key, and the recipient verifies with the sender's public key.",
+      "The mathematical relationship between the public and private key is one-way: generating a private key from a public key is computationally infeasible."
+    ]
+  }
+}

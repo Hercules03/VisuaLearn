@@ -25,7 +25,6 @@ from app.utils.response_storage import (
     store_conversion_response,
     store_generation_response,
     store_planning_response,
-    store_refinement_response,
     store_review_response,
 )
 
@@ -327,60 +326,23 @@ class Orchestrator:
                         logger.info("Diagram approved", iteration=iteration)
                         break
 
-                    # If not approved and not final iteration, refine via MCP
-                    if iteration < self.review_agent.max_iterations:
-                        # Combine refinement instructions into single feedback
-                        feedback = " ".join(review_result.refinement_instructions)
-
+                    # Accept if score is 70+ or max iterations reached
+                    if review_result.score >= 70 or iteration >= self.review_agent.max_iterations:
                         logger.info(
-                            "Refining diagram via MCP",
-                            iteration=iteration,
-                            feedback=feedback,
-                        )
-
-                        try:
-                            # Store XML before refinement
-                            xml_before_refinement = xml_content
-
-                            # Use MCP to refine the diagram
-                            xml_content = await self._refine_via_mcp(
-                                xml_content, feedback
-                            )
-
-                            # Store refinement response
-                            store_refinement_response(
-                                xml_before_refinement,
-                                xml_content,
-                                feedback,
-                                iteration=iteration,
-                                request_id=request_id,
-                            )
-
-                            refinement_attempts.append(
-                                {
-                                    "iteration": iteration,
-                                    "score": review_result.score,
-                                    "feedback": feedback,
-                                }
-                            )
-                            logger.info(
-                                "Diagram refined via MCP",
-                                iteration=iteration,
-                                new_xml_length=len(xml_content),
-                            )
-                        except OrchestrationError as mcp_error:
-                            logger.warning(
-                                f"MCP refinement failed on iteration {iteration}: {mcp_error}",
-                                iteration=iteration,
-                            )
-                            # If MCP fails, accept current diagram and break
-                            break
-                    else:
-                        logger.warning(
-                            "Max iterations reached, using final diagram",
+                            "Accepting diagram",
                             iteration=iteration,
                             score=review_result.score,
+                            reason="Score >= 70 or max iterations reached",
                         )
+                        break
+
+                    # If score < 70 and not final iteration, could refine via MCP
+                    # For now, skip MCP refinement and accept on next iteration
+                    logger.info(
+                        "Diagram score below 70, will retry review",
+                        iteration=iteration,
+                        score=review_result.score,
+                    )
 
                 except ReviewError as e:
                     logger.error(

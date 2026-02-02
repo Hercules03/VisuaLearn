@@ -1,0 +1,112 @@
+{
+  "timestamp": "2026-02-02T23:10:31.852424",
+  "request_id": "32230ae8",
+  "step": "planning_agent",
+  "data": {
+    "concept": "Asymmetric key cryptography uses a pair of mathematically linked keys (a public key and a private key) for secure communication, where the public key can encrypt messages that only its corresponding private key can decrypt, and vice versa.",
+    "diagram_type": "sequence",
+    "components": [
+      "Sender (Alice)",
+      "Receiver (Bob)",
+      "Key Pair Generation (Bob)",
+      "Bob's Public Key",
+      "Bob's Private Key",
+      "Original Message (Plaintext)",
+      "Encryption Process",
+      "Encrypted Message (Ciphertext)",
+      "Decryption Process",
+      "Decrypted Message (Plaintext)"
+    ],
+    "relationships": [
+      {
+        "from": "Receiver (Bob)",
+        "to": "Key Pair Generation (Bob)",
+        "label": "initiates"
+      },
+      {
+        "from": "Key Pair Generation (Bob)",
+        "to": "Bob's Public Key",
+        "label": "generates"
+      },
+      {
+        "from": "Key Pair Generation (Bob)",
+        "to": "Bob's Private Key",
+        "label": "generates"
+      },
+      {
+        "from": "Receiver (Bob)",
+        "to": "Sender (Alice)",
+        "label": "shares Bob's Public Key"
+      },
+      {
+        "from": "Sender (Alice)",
+        "to": "Original Message (Plaintext)",
+        "label": "has"
+      },
+      {
+        "from": "Sender (Alice)",
+        "to": "Encryption Process",
+        "label": "uses"
+      },
+      {
+        "from": "Original Message (Plaintext)",
+        "to": "Encryption Process",
+        "label": "input"
+      },
+      {
+        "from": "Bob's Public Key",
+        "to": "Encryption Process",
+        "label": "input (key)"
+      },
+      {
+        "from": "Encryption Process",
+        "to": "Encrypted Message (Ciphertext)",
+        "label": "produces"
+      },
+      {
+        "from": "Sender (Alice)",
+        "to": "Receiver (Bob)",
+        "label": "sends Encrypted Message"
+      },
+      {
+        "from": "Receiver (Bob)",
+        "to": "Decryption Process",
+        "label": "uses"
+      },
+      {
+        "from": "Encrypted Message (Ciphertext)",
+        "to": "Decryption Process",
+        "label": "input"
+      },
+      {
+        "from": "Bob's Private Key",
+        "to": "Decryption Process",
+        "label": "input (key)"
+      },
+      {
+        "from": "Decryption Process",
+        "to": "Decrypted Message (Plaintext)",
+        "label": "produces"
+      },
+      {
+        "from": "Decrypted Message (Plaintext)",
+        "to": "Original Message (Plaintext)",
+        "label": "matches"
+      }
+    ],
+    "success_criteria": [
+      "The user can correctly identify which key (public/private) is used for encryption and which for decryption in a given scenario.",
+      "The user can trace the flow of a message from creation to decryption, identifying each transformation step.",
+      "The user can explain why sharing the private key is unnecessary and dangerous.",
+      "The user understands the distinction between plaintext and ciphertext within the process.",
+      "The user can articulate how the system ensures only the intended receiver can read the message."
+    ],
+    "key_insights": [
+      "Asymmetric cryptography uses two distinct keys: a public key for encryption and a private key for decryption (or vice versa for signatures).",
+      "The public key can be freely distributed, while the private key must be kept secret by its owner.",
+      "The security of the system relies on the computational infeasibility of deriving the private key from the public key.",
+      "This method eliminates the need for a secure pre-shared secret, facilitating secure communication between parties who have never met.",
+      "Asymmetric keys are fundamental not just for encryption, but also for digital signatures and secure key exchange."
+    ]
+  }
+}

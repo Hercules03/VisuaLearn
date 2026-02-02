@@ -1,0 +1,127 @@
+{
+  "timestamp": "2026-02-02T23:25:31.200878",
+  "request_id": "eeee535b",
+  "step": "planning_agent",
+  "data": {
+    "concept": "Asymmetric key encryption, also known as public-key cryptography, uses a pair of mathematically linked keys (a public key and a private key) to secure communication, where one key encrypts data and the other key decrypts it.",
+    "diagram_type": "flowchart",
+    "components": [
+      "Alice (Sender)",
+      "Bob (Receiver)",
+      "Alice's Original Message (Plaintext)",
+      "Bob's Public Key",
+      "Bob's Private Key",
+      "Encryption Algorithm",
+      "Ciphertext",
+      "Decryption Algorithm",
+      "Decrypted Message (Plaintext)",
+      "Key Pair Generation (Conceptual)",
+      "Secure Communication Channel (Internet)"
+    ],
+    "relationships": [
+      {
+        "from": "Bob (Receiver)",
+        "to": "Key Pair Generation (Conceptual)",
+        "label": "initiates"
+      },
+      {
+        "from": "Key Pair Generation (Conceptual)",
+        "to": "Bob's Public Key",
+        "label": "produces"
+      },
+      {
+        "from": "Key Pair Generation (Conceptual)",
+        "to": "Bob's Private Key",
+        "label": "produces"
+      },
+      {
+        "from": "Bob (Receiver)",
+        "to": "Bob's Private Key",
+        "label": "securely possesses"
+      },
+      {
+        "from": "Bob (Receiver)",
+        "to": "Bob's Public Key",
+        "label": "shares publicly with"
+      },
+      {
+        "from": "Bob's Public Key",
+        "to": "Alice (Sender)",
+        "label": "is available to"
+      },
+      {
+        "from": "Alice (Sender)",
+        "to": "Alice's Original Message (Plaintext)",
+        "label": "has"
+      },
+      {
+        "from": "Alice's Original Message (Plaintext)",
+        "to": "Encryption Algorithm",
+        "label": "is input to"
+      },
+      {
+        "from": "Bob's Public Key",
+        "to": "Encryption Algorithm",
+        "label": "is used by"
+      },
+      {
+        "from": "Encryption Algorithm",
+        "to": "Ciphertext",
+        "label": "generates"
+      },
+      {
+        "from": "Alice (Sender)",
+        "to": "Ciphertext",
+        "label": "sends"
+      },
+      {
+        "from": "Ciphertext",
+        "to": "Secure Communication Channel (Internet)",
+        "label": "travels over"
+      },
+      {
+        "from": "Secure Communication Channel (Internet)",
+        "to": "Ciphertext",
+        "label": "delivers to Bob"
+      },
+      {
+        "from": "Ciphertext",
+        "to": "Decryption Algorithm",
+        "label": "is input to"
+      },
+      {
+        "from": "Bob's Private Key",
+        "to": "Decryption Algorithm",
+        "label": "is used by"
+      },
+      {
+        "from": "Decryption Algorithm",
+        "to": "Decrypted Message (Plaintext)",
+        "label": "restores"
+      },
+      {
+        "from": "Decrypted Message (Plaintext)",
+        "to": "Bob (Receiver)",
+        "label": "is received by"
+      },
+      {
+        "from": "Alice's Original Message (Plaintext)",
+        "to": "Decrypted Message (Plaintext)",
+        "label": "is identical to"
+      }
+    ],
+    "success_criteria": [
+      "User can correctly identify Bob's Public Key and Bob's Private Key.",
+      "User understands that the Public Key encrypts and the Private Key decrypts for confidentiality.",
+      "User can trace the flow of the message from Alice's plaintext to Bob's decrypted plaintext.",
+      "User can explain why the private key must be kept secret and by whom.",
+      "User can describe the roles of Alice and Bob in the communication process."
+    ],
+    "key_insights": [
+      "Asymmetric encryption uses two distinct, mathematically linked keys: a public key for encryption and a private key for decryption (in this use case).",
+      "The public key can be shared widely, but the private key must always remain secret with its owner.",
+      "Anyone with the public key can encrypt a message, but only the holder of the corresponding private key can decrypt it.",
+      "This system elegantly solves the key exchange problem by allowing secure communication without pre-sharing a secret key over an insecure channel."
+    ]
+  }
+}
